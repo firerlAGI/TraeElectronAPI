@@ -1,30 +1,100 @@
 # TraeAPI
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+[English](README.md) | [中文](README.zh-CN.md)
 
-TraeAPI is a local HTTP bridge for Trae desktop.
+TraeAPI is a local HTTP bridge for the Trae desktop app.
 
-It attaches to the Trae Electron window through the Chrome DevTools Protocol, drives the rendered UI with DOM selectors, and exposes a stable local API that other tools can call.
+It connects to the Trae Electron window through the Chrome DevTools Protocol, drives the rendered UI with DOM selectors, and exposes a stable local API that other tools can call.
 
-This project is meant to be used as a local interface service.
-It is not an official Trae API.
-
-## What You Get
-
-- Local HTTP API for sessions, messages, and streaming replies
-- Built-in browser chat page at `/chat`
-- Health and readiness probes
-- Optional token auth and origin controls
-- Selector diagnostics for maintaining the bridge across Trae UI changes
-
-## Requirements
-
-- Node.js `>= 22`
-- A Trae build that supports `--remote-debugging-port=<port>`
-- A Trae window with a project already open
-- DOM selectors that match the current Trae UI
+This is a local desktop bridge, not an official Trae API.
 
 ## Quick Start
+
+### Windows One-Click Start
+
+If you are on Windows, the intended path is simple:
+
+1. Double-click [start-traeapi.cmd](start-traeapi.cmd)
+
+On the first run, TraeAPI will:
+
+- create `.env` from [.env.example](.env.example) if needed
+- auto-detect `Trae.exe` when possible
+- create a local workspace folder if you did not configure one yet
+- try to attach to your existing Trae window first
+- automatically launch a dedicated Trae window if the existing one is not automation-ready
+- start the local gateway
+- open the built-in chat page in your browser
+
+If Trae cannot be auto-detected, the launcher will ask for the Trae executable path once and save it into `.env`.
+
+You can run the same flow from a terminal:
+
+```bash
+npm run quickstart
+```
+
+After startup succeeds, use:
+
+- Chat page: `http://127.0.0.1:8787/chat`
+- API base: `http://127.0.0.1:8787`
+
+## What Users Need to Know
+
+- TraeAPI runs locally on your machine.
+- Trae must support `--remote-debugging-port=<port>`.
+- TraeAPI will open a project folder in Trae. If you did not set one, it will create a default local workspace automatically.
+- If your current Trae window is unsuitable for automation, quickstart will switch to a dedicated Trae profile automatically so the user does not have to manage ports or Chromium profiles manually.
+
+## Public API
+
+Stable local endpoints:
+
+- `GET /health`
+- `GET /ready`
+- `GET /openapi.json`
+- `GET /openapi.yaml`
+- `POST /v1/chat`
+- `POST /v1/chat/stream`
+- `POST /v1/sessions`
+- `GET /v1/sessions/{sessionId}`
+- `POST /v1/sessions/{sessionId}/messages`
+- `POST /v1/sessions/{sessionId}/messages/stream`
+
+Full request and response details are in [docs/api.md](docs/api.md).
+
+OpenAPI files are available at runtime and in the repository:
+
+- [docs/openapi.json](docs/openapi.json)
+- [docs/openapi.yaml](docs/openapi.yaml)
+
+## Minimal Usage
+
+Blocking request:
+
+```bash
+curl -X POST http://127.0.0.1:8787/v1/chat ^
+  -H "content-type: application/json" ^
+  -d "{\"content\":\"Reply with exactly: OK\"}"
+```
+
+Streaming request:
+
+```bash
+curl -N -X POST http://127.0.0.1:8787/v1/chat/stream ^
+  -H "accept: text/event-stream" ^
+  -H "content-type: application/json" ^
+  -d "{\"content\":\"Explain what you are doing step by step.\"}"
+```
+
+Examples:
+
+- Python: [examples/python/client.py](examples/python/client.py)
+- Node.js: [examples/node/client.mjs](examples/node/client.mjs)
+
+## Manual Setup
+
+If you do not want the one-click launcher:
 
 1. Install dependencies:
 
@@ -32,144 +102,80 @@ It is not an official Trae API.
 npm install
 ```
 
-2. Use [.env.example](.env.example) as a checklist and set the required environment variables in your shell:
-
-```bash
-set TRAE_BIN=C:\Path\To\Trae.exe
-set TRAE_COMPOSER_SELECTORS=textarea,[contenteditable='true']
-set TRAE_SEND_BUTTON_SELECTORS=button[data-testid='send'],button[type='submit']
-set TRAE_RESPONSE_SELECTORS=[data-message-author-role='assistant'],.assistant
-```
-
-At minimum, set:
+2. Copy [.env.example](.env.example) to `.env` and set at least:
 
 - `TRAE_BIN`
+- `TRAE_PROJECT_PATH`
 - `TRAE_COMPOSER_SELECTORS`
 - `TRAE_SEND_BUTTON_SELECTORS`
 - `TRAE_RESPONSE_SELECTORS`
 
-TraeAPI does not auto-load `.env` files right now.
-If you prefer an env file workflow, load it through your shell, process manager, or wrapper script before starting the commands below.
-
-3. Start Trae with remote debugging enabled:
+3. Start Trae:
 
 ```bash
 npm run start:trae
 ```
 
-4. Start the local gateway:
+4. Start the gateway:
 
 ```bash
 npm run start:gateway
 ```
 
-5. Verify readiness:
+5. Verify:
 
 ```bash
 curl http://127.0.0.1:8787/health
 curl http://127.0.0.1:8787/ready
 ```
 
-6. Call the API or open the built-in local UI:
-
-```bash
-start http://127.0.0.1:8787/chat
-```
-
-## Public API Surface
-
-TraeAPI currently exposes these stable local endpoints:
-
-- `GET /health`
-- `GET /ready`
-- `POST /v1/sessions`
-- `GET /v1/sessions/{sessionId}`
-- `POST /v1/sessions/{sessionId}/messages`
-- `POST /v1/sessions/{sessionId}/messages/stream`
-
-Full request and response details are documented in [docs/api.md](docs/api.md).
-
-## Minimal Usage
-
-Create a session:
-
-```bash
-curl -X POST http://127.0.0.1:8787/v1/sessions ^
-  -H "content-type: application/json" ^
-  -d "{\"metadata\":{\"client\":\"demo\"}}"
-```
-
-Send a blocking message:
-
-```bash
-curl -X POST http://127.0.0.1:8787/v1/sessions/<sessionId>/messages ^
-  -H "content-type: application/json" ^
-  -d "{\"content\":\"Summarize this project in one paragraph.\"}"
-```
-
-Send a streaming message:
-
-```bash
-curl -N -X POST http://127.0.0.1:8787/v1/sessions/<sessionId>/messages/stream ^
-  -H "accept: text/event-stream" ^
-  -H "content-type: application/json" ^
-  -d "{\"content\":\"Explain what you are doing step by step.\"}"
-```
-
-## Example Clients
-
-- Python: [examples/python/client.py](examples/python/client.py)
-- Node.js: [examples/node/client.mjs](examples/node/client.mjs)
-
-Both examples support:
-
-- `TRAE_API_BASE_URL`
-- `TRAE_API_TOKEN`
-- `TRAE_API_PROMPT`
-- `TRAE_API_STREAM`
-
 ## Configuration
 
-See [.env.example](.env.example) for the full set.
+See [.env.example](.env.example) for the full list.
 
-Most important settings:
+Important settings:
 
-- `TRAE_BIN`: Trae executable path
-- `TRAE_REMOTE_DEBUGGING_PORT`: remote debugging port, default `9222`
-- `TRAE_COMPOSER_SELECTORS`: selectors for the input element
+- `TRAE_BIN`: path to `Trae.exe`
+- `TRAE_PROJECT_PATH`: project folder Trae should open
+- `TRAE_REMOTE_DEBUGGING_PORT`: primary CDP port
+- `TRAE_QUICKSTART_USE_ISOLATED_PROFILE`: lets quickstart fall back to a dedicated Trae window automatically
+- `TRAE_QUICKSTART_REMOTE_DEBUGGING_PORT`: CDP port for the dedicated quickstart window
+- `TRAE_QUICKSTART_USER_DATA_DIR`: Chromium profile directory for the dedicated quickstart window
+- `TRAE_QUICKSTART_OPEN_CHAT`: automatically opens `/chat` after quickstart is ready
+- `TRAE_COMPOSER_SELECTORS`: selectors for the input area
 - `TRAE_SEND_BUTTON_SELECTORS`: selectors for the send button
-- `TRAE_RESPONSE_SELECTORS`: selectors for assistant output
-- `TRAE_ACTIVITY_SELECTORS`: selectors used to capture task/process text
-- `TRAE_NEW_CHAT_SELECTORS`: selectors used to open a fresh Trae conversation for a new HTTP session
-- `TRAE_GATEWAY_TOKEN`: enables Bearer auth on API routes
-- `TRAE_ALLOWED_ORIGINS`: optional allowlist for browser callers
+- `TRAE_RESPONSE_SELECTORS`: selectors for final reply content
+- `TRAE_ACTIVITY_SELECTORS`: selectors for process text and activity text
+- `TRAE_NEW_CHAT_SELECTORS`: selectors used to create a fresh Trae conversation
+- `TRAE_GATEWAY_TOKEN`: optional Bearer token for API routes
+- `TRAE_ALLOWED_ORIGINS`: optional browser origin allowlist
 - `TRAE_ENABLE_DEBUG_ENDPOINTS`: enables `/debug/automation`
 
 ## Selector Discovery
 
-If you do not know the correct selector set yet, inspect the live Trae window first:
+If the built-in selectors stop matching after a Trae update:
 
 ```bash
 npm run inspect:trae
 ```
 
-That will print:
+The inspector prints:
 
 - matched target info
 - selector hit counts
-- generic visible composer/button candidates
-- response and activity container diagnostics
+- visible composer and send-button candidates
+- response and activity diagnostics
 
 ## Safe Attach Mode
 
-If Trae is already running and you do not want the scripts to relaunch it:
+If Trae is already running and you do not want scripts to relaunch it:
 
 ```bash
 set TRAE_SAFE_ATTACH_ONLY=1
 npm run start:gateway
 ```
 
-If you want the local API to stay available while Trae is offline:
+If you want the local API to stay up even while Trae is offline:
 
 ```bash
 set TRAE_SAFE_ATTACH_ONLY=1
@@ -177,13 +183,13 @@ set TRAE_ENABLE_MOCK_BRIDGE=1
 npm run start:gateway
 ```
 
-## Operational Notes
+## Limitations
 
-- The gateway only listens on loopback addresses.
-- Message extraction is DOM-based, not OCR-based and not backed by a private Trae API.
-- Process text and final reply text both come from rendered UI containers.
-- HTTP sessions are logical gateway sessions, not durable Trae-side session IDs.
-- Requests are serialized in the automation driver so multiple callers do not click/type into the same Trae window at once.
+- This bridge reads rendered DOM text. It does not use OCR and does not call a private Trae API.
+- Trae UI updates can break selectors.
+- Process text and final reply text both come from the rendered UI, so task streams may include intermediate status text.
+- Sessions are in-memory gateway sessions, not durable Trae-side IDs.
+- Requests are serialized so multiple callers do not type into the same Trae window at once.
 
 ## Debugging
 
@@ -195,19 +201,12 @@ curl http://127.0.0.1:8787/ready
 npm run inspect:trae
 ```
 
-Optional detailed diagnostics:
+Optional automation diagnostics:
 
 ```bash
 set TRAE_ENABLE_DEBUG_ENDPOINTS=1
 curl http://127.0.0.1:8787/debug/automation
 ```
-
-## Limitations
-
-- Trae UI updates can break selectors.
-- Some Trae tasks expose richer process text than final assistant text, so both are collected from the DOM stream.
-- Session state is in-memory only.
-- This is a local desktop automation bridge, so it depends on the local Trae window staying available and stable.
 
 ## Validation
 

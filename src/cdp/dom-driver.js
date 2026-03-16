@@ -12,8 +12,9 @@ const {
   buildTriggerSubmitExpression
 } = require("./browser-dom");
 
-const DEFAULT_COMPOSER_SELECTORS = ["textarea", "[contenteditable='true']", "input[type='text']"];
+const DEFAULT_COMPOSER_SELECTORS = [".chat-input-v2-input-box-editable", "textarea", "[contenteditable='true']", "input[type='text']"];
 const DEFAULT_SEND_BUTTON_SELECTORS = [
+  "button.chat-input-v2-send-button",
   "button[data-testid*='send']",
   "button[aria-label*='Send']",
   "button[type='submit']"
@@ -29,7 +30,7 @@ const DEFAULT_RESPONSE_SELECTORS = [
   ".assistant"
 ];
 const DEFAULT_ACTIVITY_SELECTORS = [".chat-content-container", ".chat-list-wrapper"];
-const DEFAULT_NEW_CHAT_SELECTORS = [];
+const DEFAULT_NEW_CHAT_SELECTORS = ["a.codicon-icube-NewChat"];
 const DEFAULT_SUBMIT_MODE = String(process.env.TRAE_SEND_TRIGGER || "button").trim().toLowerCase() || "button";
 const DEFAULT_RESPONSE_POLL_INTERVAL_MS = Number(process.env.TRAE_RESPONSE_POLL_INTERVAL_MS || 350);
 const DEFAULT_RESPONSE_IDLE_MS = Number(process.env.TRAE_RESPONSE_IDLE_MS || 1200);

@@ -61,10 +61,15 @@ def request_json(method: str, path: str, payload=None):
         return error.code, parsed
 
 
-def stream_message(session_id: str, content: str):
+def stream_message(content: str):
     request = urllib.request.Request(
-        f"{BASE_URL}/v1/sessions/{session_id}/messages/stream",
-        data=json.dumps({"content": content}).encode("utf-8"),
+        f"{BASE_URL}/v1/chat/stream",
+        data=json.dumps(
+            {
+                "content": content,
+                "sessionMetadata": {"client": "python-example"},
+            }
+        ).encode("utf-8"),
         headers=make_headers(
             {
                 "Accept": "text/event-stream",
@@ -104,27 +109,21 @@ def main():
         print(json.dumps(ready, ensure_ascii=False, indent=2))
         return 1
 
-    status_code, created = request_json("POST", "/v1/sessions", {"metadata": {"client": "python-example"}})
-    if status_code != 201:
-        print("Failed to create session:")
-        print(json.dumps(created, ensure_ascii=False, indent=2))
-        return 1
-
-    session_id = created["data"]["session"]["sessionId"]
-    print(f"Session: {session_id}")
-
     if not USE_STREAM:
         status_code, result = request_json(
             "POST",
-            f"/v1/sessions/{session_id}/messages",
-            {"content": PROMPT},
+            "/v1/chat",
+            {
+                "content": PROMPT,
+                "sessionMetadata": {"client": "python-example"},
+            },
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if status_code == 200 else 1
 
     print("Streaming response:")
     final_text = ""
-    for event_name, payload in stream_message(session_id, PROMPT):
+    for event_name, payload in stream_message(PROMPT):
         if event_name == "delta":
             chunk = payload.get("chunk")
             chunk_type = payload.get("type")

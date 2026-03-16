@@ -8,6 +8,7 @@ TraeAPI exposes a local HTTP surface over a running Trae desktop window.
 - Automation backend: Chrome DevTools Protocol + DOM automation
 - Default base URL: `http://127.0.0.1:8787`
 - Response format: JSON for normal endpoints, Server-Sent Events for stream mode
+- Machine-readable contract: `GET /openapi.json` and `GET /openapi.yaml`
 
 This is a local desktop bridge, not an official Trae server-side API.
 
@@ -63,6 +64,7 @@ Error responses:
 HTTP sessions are logical gateway sessions.
 
 - A session does not equal a Trae-internal conversation object.
+- `POST /v1/chat` and `POST /v1/chat/stream` can auto-create a logical session for you.
 - If `TRAE_NEW_CHAT_SELECTORS` is configured, the driver will attempt to open a fresh Trae conversation the first time a new HTTP session sends a message.
 - Session state is in-memory only and is lost when the gateway restarts.
 
@@ -74,6 +76,70 @@ Session status values:
 - `error`
 
 ## Endpoints
+
+### POST /v1/chat
+
+Convenience endpoint for callers that do not want to create a session first.
+
+Behavior:
+
+- If `sessionId` is omitted, the gateway auto-creates a session.
+- If `sessionId` is provided, the existing session is reused.
+- `sessionMetadata` is only applied when a new session is auto-created.
+
+Request body:
+
+```json
+{
+  "content": "Summarize this project in one paragraph.",
+  "sessionMetadata": {
+    "client": "demo"
+  },
+  "metadata": {
+    "caller": "example-client"
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "code": "OK",
+  "data": {
+    "sessionId": "uuid",
+    "sessionCreated": true,
+    "session": {
+      "sessionId": "uuid",
+      "status": "completed"
+    },
+    "requestId": "uuid",
+    "result": {
+      "status": "ok",
+      "response": {
+        "text": "reply text"
+      }
+    }
+  }
+}
+```
+
+### POST /v1/chat/stream
+
+Convenience streaming endpoint.
+
+Request body shape matches `POST /v1/chat`.
+
+Events emitted by the gateway:
+
+- `event: open`
+- `event: delta`
+- `event: done`
+- `event: error`
+
+The `open`, `done`, and `error` payloads include `sessionId`.
+If the gateway auto-created a session for the request, they also include `sessionCreated: true`.
 
 ### GET /health
 

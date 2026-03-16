@@ -3,6 +3,7 @@ const { randomUUID } = require("node:crypto");
 const { createTraeAutomationDriver } = require("../cdp/dom-driver");
 const { normalizeAutomationError } = require("../cdp/errors");
 const { getChatPageHtml } = require("./chat-ui");
+const { buildOpenApiDocument, buildOpenApiYaml } = require("./openapi");
 
 const MAX_BODY_BYTES = Number(process.env.TRAE_HTTP_MAX_BODY_BYTES || 1024 * 1024);
 const DEFAULT_AUTH_HEADER = "authorization";
@@ -33,6 +34,11 @@ function writeJson(res, statusCode, payload) {
 function writeHtml(res, statusCode, html) {
   res.writeHead(statusCode, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
+}
+
+function writeText(res, statusCode, contentType, text) {
+  res.writeHead(statusCode, { "content-type": `${contentType}; charset=utf-8` });
+  res.end(text);
 }
 
 function writeApiSuccess(res, statusCode, data, meta = {}) {
@@ -179,6 +185,12 @@ function parseBearerToken(value) {
     return null;
   }
   return matched[1].trim();
+}
+
+function resolveServerUrl(req) {
+  const protocol = req.socket?.encrypted ? "https" : "http";
+  const host = req.headers.host || "127.0.0.1:8787";
+  return `${protocol}://${host}`;
 }
 
 function createGatewayServer(options = {}) {
@@ -460,16 +472,7 @@ function createGatewayServer(options = {}) {
     };
   }
 
-  async function handleCreateSession(req, res, pathname, meta) {
-    const replayed = getIdempotencyEntry(req.method, pathname, meta.idempotencyKey);
-    if (replayed) {
-      return writeApiSuccess(res, replayed.statusCode, replayed.data, {
-        ...meta,
-        replayed: true
-      });
-    }
-
-    const body = await readJsonBody(req);
+  function createSessionRecord(metadata = {}) {
     const sessionId = randomUUID();
     const now = new Date().toISOString();
     const session = {
@@ -477,37 +480,43 @@ function createGatewayServer(options = {}) {
       createdAt: now,
       updatedAt: now,
       status: "idle",
-      metadata: sanitizeSensitiveData(body.metadata || {})
+      metadata: sanitizeSensitiveData(metadata || {})
     };
     sessions.set(sessionId, session);
-    const data = { session };
-    setIdempotencyEntry(req.method, pathname, meta.idempotencyKey, {
-      statusCode: 201,
-      data
-    });
-    writeApiSuccess(res, 201, data, meta);
+    return session;
   }
 
-  async function handleSendMessage(req, res, pathname, sessionId, meta) {
-    const replayed = getIdempotencyEntry(req.method, pathname, meta.idempotencyKey);
-    if (replayed) {
-      return writeApiSuccess(res, replayed.statusCode, replayed.data, {
-        ...meta,
-        replayed: true
-      });
-    }
-
-    const session = requireSession(sessionId);
-    const body = await readJsonBody(req);
+  function assertValidMessageBody(body) {
     if (typeof body.content !== "string" || !body.content.trim()) {
       throw new ApiError("INVALID_MESSAGE_CONTENT", "content must be a non-empty string", 400);
     }
+    return body;
+  }
 
+  function resolveChatSession(body) {
+    if (body.sessionId === undefined || body.sessionId === null) {
+      return {
+        session: createSessionRecord(body.sessionMetadata || {}),
+        sessionCreated: true
+      };
+    }
+
+    if (typeof body.sessionId !== "string" || !body.sessionId.trim()) {
+      throw new ApiError("INVALID_SESSION_ID", "sessionId must be a non-empty string when provided", 400);
+    }
+
+    return {
+      session: requireSession(body.sessionId.trim()),
+      sessionCreated: false
+    };
+  }
+
+  async function dispatchBlockingMessage(session, body) {
     const { driver } = await requireAutomationDriver();
     const dispatched = driver.dispatchRequest({
       channel: "trae:conversation:send",
       body: {
-        sessionId,
+        sessionId: session.sessionId,
         content: body.content,
         metadata: sanitizeSensitiveData(body.metadata || {})
       }
@@ -526,16 +535,10 @@ function createGatewayServer(options = {}) {
         text: result.response?.text || null,
         chunks: result.chunks
       };
-      const data = {
-        sessionId,
+      return {
         requestId: dispatched.requestId,
         result
       };
-      setIdempotencyEntry(req.method, pathname, meta.idempotencyKey, {
-        statusCode: 200,
-        data
-      });
-      writeApiSuccess(res, 200, data, meta);
     } catch (error) {
       session.status = "error";
       session.updatedAt = new Date().toISOString();
@@ -547,13 +550,7 @@ function createGatewayServer(options = {}) {
     }
   }
 
-  async function handleStreamMessage(req, res, sessionId, meta) {
-    const session = requireSession(sessionId);
-    const body = await readJsonBody(req);
-    if (typeof body.content !== "string" || !body.content.trim()) {
-      throw new ApiError("INVALID_MESSAGE_CONTENT", "content must be a non-empty string", 400);
-    }
-
+  async function dispatchStreamMessage(res, session, body, meta, streamMeta = {}) {
     const { driver } = await requireAutomationDriver();
     res.writeHead(200, {
       "content-type": "text/event-stream; charset=utf-8",
@@ -569,7 +566,7 @@ function createGatewayServer(options = {}) {
     const dispatched = driver.dispatchRequest({
       channel: "trae:conversation:stream",
       body: {
-        sessionId,
+        sessionId: session.sessionId,
         content: body.content,
         metadata: sanitizeSensitiveData(body.metadata || {})
       },
@@ -601,8 +598,9 @@ function createGatewayServer(options = {}) {
       code: "OK",
       requestId: meta.requestId,
       idempotencyKey: meta.idempotencyKey || null,
-      sessionId,
-      streamRequestId: dispatched.requestId
+      sessionId: session.sessionId,
+      streamRequestId: dispatched.requestId,
+      ...streamMeta
     });
 
     try {
@@ -617,9 +615,10 @@ function createGatewayServer(options = {}) {
       sendEvent("done", {
         success: true,
         code: "OK",
-        sessionId,
+        sessionId: session.sessionId,
         requestId: dispatched.requestId,
-        result
+        result,
+        ...streamMeta
       });
       res.end();
     } catch (error) {
@@ -635,10 +634,95 @@ function createGatewayServer(options = {}) {
         code: normalizedError.code,
         message: normalizedError.message,
         details: normalizedError.details || {},
-        requestId: dispatched.requestId
+        requestId: dispatched.requestId,
+        sessionId: session.sessionId,
+        ...streamMeta
       });
       res.end();
     }
+  }
+
+  async function handleCreateSession(req, res, pathname, meta) {
+    const replayed = getIdempotencyEntry(req.method, pathname, meta.idempotencyKey);
+    if (replayed) {
+      return writeApiSuccess(res, replayed.statusCode, replayed.data, {
+        ...meta,
+        replayed: true
+      });
+    }
+
+    const body = await readJsonBody(req);
+    const session = createSessionRecord(body.metadata || {});
+    const data = { session };
+    setIdempotencyEntry(req.method, pathname, meta.idempotencyKey, {
+      statusCode: 201,
+      data
+    });
+    writeApiSuccess(res, 201, data, meta);
+  }
+
+  async function handleSendMessage(req, res, pathname, sessionId, meta) {
+    const replayed = getIdempotencyEntry(req.method, pathname, meta.idempotencyKey);
+    if (replayed) {
+      return writeApiSuccess(res, replayed.statusCode, replayed.data, {
+        ...meta,
+        replayed: true
+      });
+    }
+
+    const session = requireSession(sessionId);
+    const body = assertValidMessageBody(await readJsonBody(req));
+    const { requestId, result } = await dispatchBlockingMessage(session, body);
+    const data = {
+      sessionId,
+      requestId,
+      result
+    };
+    setIdempotencyEntry(req.method, pathname, meta.idempotencyKey, {
+      statusCode: 200,
+      data
+    });
+    writeApiSuccess(res, 200, data, meta);
+  }
+
+  async function handleStreamMessage(req, res, sessionId, meta) {
+    const session = requireSession(sessionId);
+    const body = assertValidMessageBody(await readJsonBody(req));
+    return dispatchStreamMessage(res, session, body, meta);
+  }
+
+  async function handleChat(req, res, pathname, meta) {
+    const replayed = getIdempotencyEntry(req.method, pathname, meta.idempotencyKey);
+    if (replayed) {
+      return writeApiSuccess(res, replayed.statusCode, replayed.data, {
+        ...meta,
+        replayed: true
+      });
+    }
+
+    const body = assertValidMessageBody(await readJsonBody(req));
+    const { session, sessionCreated } = resolveChatSession(body);
+    const { requestId, result } = await dispatchBlockingMessage(session, body);
+    const data = {
+      sessionId: session.sessionId,
+      session,
+      sessionCreated,
+      requestId,
+      result
+    };
+    setIdempotencyEntry(req.method, pathname, meta.idempotencyKey, {
+      statusCode: 200,
+      data
+    });
+    writeApiSuccess(res, 200, data, meta);
+  }
+
+  async function handleChatStream(req, res, meta) {
+    const body = assertValidMessageBody(await readJsonBody(req));
+    const { session, sessionCreated } = resolveChatSession(body);
+    return dispatchStreamMessage(res, session, body, meta, {
+      sessionCreated
+    });
   }
 
   const server = http.createServer(async (req, res) => {
@@ -660,6 +744,18 @@ function createGatewayServer(options = {}) {
         statusCode = 200;
         outcome = "success";
         return writeHtml(res, 200, getChatPageHtml());
+      }
+
+      if (pathname === "/openapi.json" && req.method === "GET") {
+        statusCode = 200;
+        outcome = "success";
+        return writeJson(res, 200, buildOpenApiDocument({ serverUrl: resolveServerUrl(req) }));
+      }
+
+      if (pathname === "/openapi.yaml" && req.method === "GET") {
+        statusCode = 200;
+        outcome = "success";
+        return writeText(res, 200, "application/yaml", buildOpenApiYaml({ serverUrl: resolveServerUrl(req) }));
       }
 
       authenticateRequest(req);
@@ -694,6 +790,18 @@ function createGatewayServer(options = {}) {
         statusCode = 201;
         outcome = "success";
         return await handleCreateSession(req, res, pathname, meta);
+      }
+
+      if (pathname === "/v1/chat" && req.method === "POST") {
+        statusCode = 200;
+        outcome = "success";
+        return await handleChat(req, res, pathname, meta);
+      }
+
+      if (pathname === "/v1/chat/stream" && req.method === "POST") {
+        statusCode = 200;
+        outcome = "stream";
+        return await handleChatStream(req, res, meta);
       }
 
       const streamSessionId = parseSessionIdFromPath(pathname, /^\/v1\/sessions\/([^/]+)\/messages\/stream$/);

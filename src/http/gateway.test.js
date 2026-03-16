@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
+const packageJson = require("../../package.json");
 const { createGatewayServer, startGatewayServer } = require("./gateway");
 
 function createMockAutomationDriver() {
@@ -98,7 +99,7 @@ function readResponseBody(response) {
   });
 }
 
-function sendJsonRequest(port, { method, path, headers, body }) {
+function sendJsonRequest(port, { method, path, headers, body, parseJson = true }) {
   return new Promise((resolve, reject) => {
     const request = http.request(
       {
@@ -117,7 +118,7 @@ function sendJsonRequest(port, { method, path, headers, body }) {
           statusCode: response.statusCode,
           headers: response.headers,
           text,
-          json: text ? JSON.parse(text) : null
+          json: parseJson && text ? JSON.parse(text) : null
         });
       }
     );
@@ -324,6 +325,157 @@ test("stream endpoint returns incremental events and closes the connection", asy
   assert.equal(streamResponse.text.includes("\"type\":\"replace\""), true);
 
   await new Promise((resolve) => server.close(resolve));
+});
+
+test("openapi routes expose machine-readable specs without auth", async () => {
+  const driver = createMockAutomationDriver();
+  const { server } = createGatewayServer({
+    authToken: "task4-token",
+    automationDriver: driver
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+
+  try {
+    const openApiJsonResponse = await sendJsonRequest(port, {
+      method: "GET",
+      path: "/openapi.json"
+    });
+    assert.equal(openApiJsonResponse.statusCode, 200);
+    assert.equal(openApiJsonResponse.json.openapi, "3.1.0");
+    assert.equal(openApiJsonResponse.json.info.version, packageJson.version);
+    assert.equal(openApiJsonResponse.json.servers[0].url, `http://127.0.0.1:${port}`);
+    assert.ok(openApiJsonResponse.json.paths["/v1/sessions"]);
+    assert.ok(openApiJsonResponse.json.paths["/v1/chat"]);
+
+    const openApiYamlResponse = await sendJsonRequest(port, {
+      method: "GET",
+      path: "/openapi.yaml",
+      parseJson: false
+    });
+    assert.equal(openApiYamlResponse.statusCode, 200);
+    assert.equal(String(openApiYamlResponse.headers["content-type"]).startsWith("application/yaml"), true);
+    assert.match(openApiYamlResponse.text, /openapi: "3\.1\.0"/);
+    assert.match(openApiYamlResponse.text, /"\/v1\/sessions":/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("chat convenience endpoint auto-creates sessions, replays idempotently, and can reuse a session", async () => {
+  const driver = createMockAutomationDriver();
+  const { server } = createGatewayServer({
+    automationDriver: driver
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+
+  try {
+    const firstResponse = await sendJsonRequest(port, {
+      method: "POST",
+      path: "/v1/chat",
+      headers: {
+        "idempotency-key": "chat-once"
+      },
+      body: {
+        content: "hello from convenience route",
+        sessionMetadata: {
+          client: "chat-convenience"
+        },
+        metadata: {
+          turn: 1
+        }
+      }
+    });
+
+    assert.equal(firstResponse.statusCode, 200);
+    assert.equal(firstResponse.json.data.sessionCreated, true);
+    assert.equal(firstResponse.json.data.session.metadata.client, "chat-convenience");
+    assert.equal(firstResponse.json.data.result.response.text, "reply");
+    assert.equal(driver.calls.length, 1);
+    const sessionId = firstResponse.json.data.sessionId;
+
+    const replayedResponse = await sendJsonRequest(port, {
+      method: "POST",
+      path: "/v1/chat",
+      headers: {
+        "idempotency-key": "chat-once"
+      },
+      body: {
+        content: "hello from convenience route",
+        sessionMetadata: {
+          client: "chat-convenience"
+        },
+        metadata: {
+          turn: 1
+        }
+      }
+    });
+    assert.equal(replayedResponse.statusCode, 200);
+    assert.equal(replayedResponse.json.meta.replayed, true);
+    assert.equal(replayedResponse.json.data.sessionId, sessionId);
+    assert.equal(driver.calls.length, 1);
+
+    const reuseResponse = await sendJsonRequest(port, {
+      method: "POST",
+      path: "/v1/chat",
+      body: {
+        sessionId,
+        content: "follow-up question"
+      }
+    });
+    assert.equal(reuseResponse.statusCode, 200);
+    assert.equal(reuseResponse.json.data.sessionCreated, false);
+    assert.equal(reuseResponse.json.data.sessionId, sessionId);
+    assert.equal(driver.calls.length, 2);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("chat stream convenience endpoint auto-creates a session and exposes sessionCreated in events", async () => {
+  const driver = createMockAutomationDriver();
+  const { server } = createGatewayServer({
+    automationDriver: driver
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+
+  try {
+    const streamResponse = await new Promise((resolve, reject) => {
+      const request = http.request(
+        {
+          hostname: "127.0.0.1",
+          port,
+          method: "POST",
+          path: "/v1/chat/stream",
+          headers: {
+            "content-type": "application/json"
+          }
+        },
+        async (response) => {
+          const text = await readResponseBody(response);
+          resolve({
+            statusCode: response.statusCode,
+            headers: response.headers,
+            text
+          });
+        }
+      );
+      request.on("error", reject);
+      request.write(JSON.stringify({ content: "stream via convenience route" }));
+      request.end();
+    });
+
+    assert.equal(streamResponse.statusCode, 200);
+    assert.equal(String(streamResponse.headers["content-type"]).startsWith("text/event-stream"), true);
+    assert.equal(streamResponse.text.includes("event: open"), true);
+    assert.equal(streamResponse.text.includes("event: done"), true);
+    assert.equal(streamResponse.text.includes("\"sessionCreated\":true"), true);
+    assert.equal(driver.calls.length, 1);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
 
 test("requests are rejected when auth is enabled and the token is missing", async () => {

@@ -1,5 +1,9 @@
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
 const { discoverTraeTarget, getDebuggerVersion } = require("../src/cdp/discovery");
+const { loadEnvFiles } = require("../src/config/env");
+
+loadEnvFiles();
 
 const START_TIMEOUT_MS = Number(process.env.TRAE_CDP_START_TIMEOUT_MS || 15000);
 const REMOTE_DEBUGGING_PORT = Number(process.env.TRAE_REMOTE_DEBUGGING_PORT || 9222);
@@ -25,6 +29,17 @@ function hasRemoteDebuggingPortArg(args) {
   return args.some((arg) => /^--remote-debugging-port=/.test(arg));
 }
 
+function resolveProjectArg() {
+  const projectPath = String(process.env.TRAE_PROJECT_PATH || "").trim();
+  if (!projectPath) {
+    return null;
+  }
+  if (!fs.existsSync(projectPath)) {
+    throw new Error(`TRAE_PROJECT_PATH does not exist: ${projectPath}`);
+  }
+  return projectPath;
+}
+
 function resolveTraeLaunchTarget() {
   const command = String(process.env.TRAE_BIN || "").trim();
   if (!command) {
@@ -34,6 +49,11 @@ function resolveTraeLaunchTarget() {
   const args = parseLaunchArgs(process.env.TRAE_ARGS || "");
   if (!hasRemoteDebuggingPortArg(args)) {
     args.push(`--remote-debugging-port=${REMOTE_DEBUGGING_PORT}`);
+  }
+
+  const projectArg = resolveProjectArg();
+  if (projectArg && !args.includes(projectArg)) {
+    args.push(projectArg);
   }
 
   return {

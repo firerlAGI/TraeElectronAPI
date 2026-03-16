@@ -1,4 +1,7 @@
 const { createTraeAutomationDriver } = require("../src/cdp/dom-driver");
+const { loadEnvFiles } = require("../src/config/env");
+
+loadEnvFiles();
 
 async function main() {
   const driver = createTraeAutomationDriver();

@@ -1,6 +1,9 @@
 const { createTraeAutomationDriver } = require("../src/cdp/dom-driver");
 const { createMockAutomationDriver } = require("../src/cdp/mock-driver");
 const { startGatewayServer } = require("../src/server");
+const { loadEnvFiles } = require("../src/config/env");
+
+loadEnvFiles();
 
 function isSafeAttachModeEnabled() {
   return process.env.TRAE_SAFE_ATTACH_ONLY === "1";

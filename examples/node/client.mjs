@@ -40,31 +40,18 @@ async function requestJson(path, options = {}) {
   };
 }
 
-async function createSession() {
-  const { status, payload } = await requestJson("/v1/sessions", {
+async function sendMessage(content) {
+  const { status, payload } = await requestJson("/v1/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      metadata: {
+      content,
+      sessionMetadata: {
         client: "node-example"
       }
     })
-  });
-  if (status !== 201) {
-    throw new Error(`Failed to create session: ${JSON.stringify(payload)}`);
-  }
-  return payload.data.session.sessionId;
-}
-
-async function sendMessage(sessionId, content) {
-  const { status, payload } = await requestJson(`/v1/sessions/${encodeURIComponent(sessionId)}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ content })
   });
   if (status !== 200) {
     throw new Error(`Message request failed: ${JSON.stringify(payload)}`);
@@ -93,14 +80,19 @@ function parseSseChunk(rawChunk) {
   };
 }
 
-async function streamMessage(sessionId, content) {
-  const response = await fetch(`${baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/messages/stream`, {
+async function streamMessage(content) {
+  const response = await fetch(`${baseUrl}/v1/chat/stream`, {
     method: "POST",
     headers: buildHeaders({
       Accept: "text/event-stream",
       "Content-Type": "application/json"
     }),
-    body: JSON.stringify({ content })
+    body: JSON.stringify({
+      content,
+      sessionMetadata: {
+        client: "node-example"
+      }
+    })
   });
 
   if (!response.ok) {
@@ -149,16 +141,13 @@ async function main() {
     process.exit(1);
   }
 
-  const sessionId = await createSession();
-  console.log("Session:", sessionId);
-
   if (!useStream) {
-    const payload = await sendMessage(sessionId, prompt);
+    const payload = await sendMessage(prompt);
     console.log(JSON.stringify(payload, null, 2));
     return;
   }
 
-  const finalText = await streamMessage(sessionId, prompt);
+  const finalText = await streamMessage(prompt);
   if (finalText) {
     console.log("Final text:");
     console.log(finalText);
