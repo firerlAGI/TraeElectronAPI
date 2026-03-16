@@ -420,6 +420,60 @@ function openChatPage(config) {
   }
 }
 
+function buildGatewayUrls(config) {
+  const baseUrl = `http://${config.host}:${config.port}`;
+  return {
+    baseUrl,
+    chatUrl: `${baseUrl}/chat`,
+    healthUrl: `${baseUrl}/health`,
+    readyUrl: `${baseUrl}/ready`
+  };
+}
+
+function printUserSummary(title, lines) {
+  const normalizedLines = (lines || []).filter(Boolean);
+  if (!normalizedLines.length) {
+    return;
+  }
+
+  console.log("");
+  console.log(title);
+  for (const line of normalizedLines) {
+    console.log(`- ${line}`);
+  }
+  console.log("");
+}
+
+function printGatewayReadySummary(config, mode, message) {
+  const urls = buildGatewayUrls(config);
+  printUserSummary(message, [
+    `Mode: ${mode}`,
+    `Chat: ${urls.chatUrl}`,
+    `API: ${urls.baseUrl}`,
+    `Health: ${urls.healthUrl}`,
+    `Ready: ${urls.readyUrl}`,
+    `Project: ${config.projectPath}`,
+    `Env: ${ENV_PATH}`
+  ]);
+}
+
+function printIsolatedWindowNotice(runtimePlan) {
+  printUserSummary("TraeAPI quickstart is switching to a dedicated Trae window.", [
+    "Your current Trae window is not automation-ready.",
+    `Dedicated debug port: ${runtimePlan.isolated.debuggerPort}`,
+    `Dedicated profile: ${runtimePlan.isolated.userDataDir}`
+  ]);
+}
+
+function printQuickstartFailureHints(error) {
+  printUserSummary("TraeAPI quickstart failed.", [
+    error?.message || "Unknown startup error.",
+    "Check that Trae is installed and you can sign in.",
+    "Check that Trae can open a project window.",
+    "If the window is open but automation still fails, run: npm run inspect:trae"
+  ]);
+}
+
 function runNodeScript(scriptFileName, { waitForExit = true, envOverrides = {} } = {}) {
   const child = spawn(process.execPath, [path.join(__dirname, scriptFileName)], {
     cwd: ROOT_DIR,
@@ -597,6 +651,7 @@ async function ensureTraeWindowReady(config) {
       2
     )
   );
+  printIsolatedWindowNotice(runtimePlan);
 
   fs.mkdirSync(runtimePlan.isolated.userDataDir, { recursive: true });
   seedIsolatedProfileFromExistingTrae(config, runtimePlan.isolated);
@@ -623,6 +678,7 @@ async function main() {
 
   if (existingGatewayHealth && existingGatewayReady) {
     openChatPage(config);
+    printGatewayReadySummary(config, "attached", "TraeAPI is already running.");
     console.log(
       JSON.stringify(
         {
@@ -646,6 +702,7 @@ async function main() {
     const revivedGatewayReady = await waitForGatewayEndpoint(config.host, config.port, "/ready");
     if (revivedGatewayReady) {
       openChatPage(config);
+      printGatewayReadySummary(config, launchResult.runtime.label, "TraeAPI is already running and is now ready.");
       console.log(
         JSON.stringify(
           {
@@ -688,6 +745,7 @@ async function main() {
   }
 
   openChatPage(config);
+  printGatewayReadySummary(config, launchResult.runtime.label, "TraeAPI quickstart is ready.");
   console.log(
     JSON.stringify(
       {
@@ -719,6 +777,7 @@ async function main() {
 
 if (require.main === module) {
   main().catch((error) => {
+    printQuickstartFailureHints(error);
     console.error(
       JSON.stringify(
         {
