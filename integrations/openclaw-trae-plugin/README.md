@@ -1,87 +1,84 @@
-# OpenClaw Trae IDE Plugin
+# OpenClaw Trae Plugin
 
 This plugin lets OpenClaw use the local Trae desktop app as an IDE tool through TraeAPI.
 
-For an end-to-end setup and troubleshooting guide, see [../../docs/openclaw-integration.md](../../docs/openclaw-integration.md).
-
 Target flow:
 
-`OpenClaw agent -> trae_delegate tool -> TraeAPI -> Trae desktop`
+`OpenClaw -> trae_delegate -> TraeAPI -> Trae desktop app`
 
-This is not a model provider plugin. OpenClaw keeps using its own configured LLM. The plugin only gives the agent a way to delegate IDE work to Trae.
+This is not a model-provider integration. OpenClaw keeps using its own LLM. The plugin only delegates IDE work to Trae.
 
-## What It Adds
+## What It Exposes
+
+The plugin registers two tools inside OpenClaw:
 
 - `trae_status`
-  - Checks whether the local TraeAPI bridge is reachable and ready.
 - `trae_delegate`
-  - Optional tool that sends an IDE task to Trae through `POST /v1/chat`.
-  - Returns the final reply plus collected process text when available.
 
-## Install
+`trae_status` checks whether the local TraeAPI service is reachable and ready.
 
-You have two practical ways to load the plugin.
+`trae_delegate` sends a task to TraeAPI so Trae can work on it inside the desktop IDE.
 
-### Option A: Load directly from this repository
+## Recommended Setup
 
-This is the simplest path while TraeAPI and the plugin live in the same checkout.
+1. Start TraeAPI first.
+2. Load this plugin from a local path in OpenClaw.
+3. Add the plugin tools through `tools.alsoAllow`.
+4. Restart OpenClaw Gateway.
+5. Ask OpenClaw to use `trae_status` or `trae_delegate`.
 
-Add the plugin directory to `plugins.load.paths`:
+Full user-facing guides:
+
+- [Install Guide](../../docs/install.md)
+- [FAQ](../../docs/faq.md)
+- [OpenClaw Integration Guide](../../docs/openclaw-integration.md)
+
+## Minimal OpenClaw Config
 
 ```json
 {
   "plugins": {
     "load": {
       "paths": [
-        "E:\\tiy\\chajian2\\integrations\\openclaw-trae-plugin"
+        "C:\\path\\to\\TraeAPI\\integrations\\openclaw-trae-plugin"
       ]
     },
-    "entries": {
-      "trae-ide": {
-        "enabled": true
-      }
-    }
-  }
-}
-```
-
-In this mode, the plugin can infer the bundled `start-traeapi.cmd` path automatically.
-
-### Option B: Install the plugin into OpenClaw
-
-If you prefer OpenClaw-managed installation:
-
-```bash
-openclaw plugins install E:\tiy\chajian2\integrations\openclaw-trae-plugin
-```
-
-Restart the OpenClaw Gateway afterwards.
-
-In this mode, set `quickstartCommand` explicitly because the plugin is no longer running from the repository path.
-
-## Configure
-
-Add or update the plugin entry in your OpenClaw config:
-
-```json
-{
-  "plugins": {
     "entries": {
       "trae-ide": {
         "enabled": true,
         "config": {
           "baseUrl": "http://127.0.0.1:8787",
           "autoStart": true,
-          "quickstartCommand": "E:\\tiy\\chajian2\\start-traeapi.cmd",
-          "quickstartCwd": "E:\\tiy\\chajian2"
+          "quickstartCommand": "C:\\path\\to\\TraeAPI\\start-traeapi.cmd",
+          "quickstartCwd": "C:\\path\\to\\TraeAPI"
         }
       }
     }
+  },
+  "tools": {
+    "alsoAllow": ["trae-ide"]
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "tools": {
+          "alsoAllow": ["trae_status", "trae_delegate"]
+        }
+      }
+    ]
   }
 }
 ```
 
-If your TraeAPI gateway uses Bearer auth, also set:
+You can also start from:
+
+- [openclaw.config.example.json](examples/openclaw.config.example.json)
+- [openclaw.minimal.config.json](examples/openclaw.minimal.config.json)
+
+## Token-Protected Gateway
+
+If TraeAPI uses `TRAE_GATEWAY_TOKEN`, add `token` in the plugin config:
 
 ```json
 {
@@ -97,51 +94,35 @@ If your TraeAPI gateway uses Bearer auth, also set:
 }
 ```
 
-## Enable The Tool For Agents
+## Important Tool Policy Note
 
-`trae_delegate` is optional because it can trigger IDE actions and code changes. Enable it additively per agent or globally.
+Use `tools.alsoAllow` or `agents.list[].tools.alsoAllow`.
 
-Important: if your OpenClaw config already uses a restrictive tool profile or `tools.allow`, prefer `tools.alsoAllow` for this plugin. OpenClaw strips plugin-only `allow` lists to avoid hiding core tools, so `allow: ["trae_delegate"]` can look correct while still failing to expose the plugin tool to the agent.
+Do not rely on a plugin-only `tools.allow` entry. OpenClaw may show the plugin in the catalog while still blocking agent tool use unless the plugin tools are added through `alsoAllow`.
 
-Per-agent example:
+## Quick Validation
 
-```json
-{
-  "agents": {
-    "list": [
-      {
-        "id": "main",
-        "tools": {
-          "alsoAllow": ["trae_status", "trae_delegate"]
-        }
-      }
-    ]
-  }
-}
-```
+After OpenClaw restarts:
 
-If you prefer to enable all tools from this plugin globally:
+1. Confirm the plugin is loaded.
+2. Ask OpenClaw: `Use trae_status exactly once and tell me whether Trae is ready.`
+3. Ask OpenClaw: `Use trae_delegate exactly once and ask Trae to summarize this project.`
 
-```json
-{
-  "tools": {
-    "alsoAllow": ["trae-ide"]
-  }
-}
-```
+## Troubleshooting
 
-`trae_status` is registered as a normal tool, but if you use explicit tool policy you should still include it in `alsoAllow` so the agent definitely sees it.
+OpenClaw can see the plugin but cannot call `trae_delegate`
 
-## Example Prompts
+- Check `tools.alsoAllow`
+- Restart OpenClaw Gateway
+- Confirm TraeAPI is ready at `http://127.0.0.1:8787/ready`
 
-- `Use Trae to inspect this project and summarize the main architecture.`
-- `Use Trae to implement the requested fix and tell me what changed.`
-- `Check Trae status first, then delegate this IDE task to Trae.`
+TraeAPI is up but not ready
 
-## Operational Notes
+- Make sure Trae is installed and logged in
+- Make sure Trae can open a project
+- Run `npm run inspect:trae`
 
-- The plugin expects TraeAPI to be reachable on the same machine as the OpenClaw Gateway.
-- `autoStart` is optional. When enabled, the plugin will run `quickstartCommand` and wait for `/ready`.
-- If you load the plugin directly from this repository with `plugins.load.paths`, `quickstartCommand` can usually be omitted.
-- The plugin returns Trae process text when the gateway exposes `result.chunks`.
-- The active project is still controlled by TraeAPI and the Trae window it launches or attaches to.
+Trae opens a dedicated window
+
+- This is expected when the current Trae window is not automation-ready
+- The dedicated window keeps the bridge more stable

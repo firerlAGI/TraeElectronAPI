@@ -85,6 +85,11 @@ If your gateway uses a bearer token, also set:
 }
 ```
 
+You can also start from repository examples instead of writing the config from scratch:
+
+- [Plugin example config](../integrations/openclaw-trae-plugin/examples/openclaw.config.example.json)
+- [Minimal plugin config](../integrations/openclaw-trae-plugin/examples/openclaw.minimal.config.json)
+
 ## 3. Enable The Tools Correctly
 
 Use `alsoAllow`, not a plugin-only `allow` list.

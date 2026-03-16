@@ -85,6 +85,11 @@ curl http://127.0.0.1:8787/ready
 }
 ```
 
+你也可以直接从仓库里的示例配置开始，不用自己手写整段 JSON：
+
+- [插件完整示例](../integrations/openclaw-trae-plugin/examples/openclaw.config.example.json)
+- [插件最小示例](../integrations/openclaw-trae-plugin/examples/openclaw.minimal.config.json)
+
 ## 3. 正确启用工具
 
 请用 `alsoAllow`，不要只写插件专用的 `allow`。
