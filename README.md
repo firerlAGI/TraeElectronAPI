@@ -13,6 +13,8 @@ This is a local desktop bridge, not an official Trae API.
 - [Install Guide](docs/install.md)
 - [FAQ](docs/faq.md)
 - [OpenClaw Integration](docs/openclaw-integration.md)
+- [Changelog](CHANGELOG.md)
+- [Security Policy](SECURITY.md)
 
 ## Quick Start
 

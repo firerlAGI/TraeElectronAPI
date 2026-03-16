@@ -1,8 +1,24 @@
 {
-  "name": "trae-cdp-http-bridge",
+  "name": "trae-electron-api",
   "version": "0.2.1",
   "private": true,
-  "description": "Local HTTP bridge for Trae driven through Chrome DevTools Protocol and DOM automation.",
+  "description": "Local HTTP bridge and OpenClaw tool integration for Trae powered by CDP and DOM automation.",
+  "homepage": "https://github.com/firerlAGI/TraeElectronAPI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/firerlAGI/TraeElectronAPI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/firerlAGI/TraeElectronAPI/issues"
+  },
+  "keywords": [
+    "trae",
+    "electron",
+    "cdp",
+    "automation",
+    "openclaw",
+    "api"
+  ],
   "scripts": {
     "start": "node src/server.js",
     "quickstart": "node scripts/quickstart.js",
