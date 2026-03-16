@@ -135,7 +135,12 @@ function createBrowserDomAdapter() {
         await session.send("Input.insertText", {
           text: content
         });
-        return session.evaluate(buildTriggerSubmitExpression(config));
+        const triggerResult = await session.evaluate(buildTriggerSubmitExpression(config));
+        const composerText = String(triggerResult?.composerText || "").trim();
+        if (triggerResult?.ok && composerText && !triggerResult?.sendButtonDisabled) {
+          return triggerResult;
+        }
+        return session.evaluate(buildSubmitExpression(config, payload));
       }
 
       return session.evaluate(buildSubmitExpression(config, payload));

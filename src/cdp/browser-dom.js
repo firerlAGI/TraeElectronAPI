@@ -51,9 +51,22 @@ function traeAutomationDescribeElement(element) {
   };
 }
 
-function traeAutomationPickLastVisible(selectors) {
-  const candidates = traeAutomationQueryAll(selectors).filter((element) => traeAutomationIsVisible(element));
-  return candidates.length > 0 ? candidates[candidates.length - 1] : null;
+function traeAutomationPickVisible(selectors, options = {}) {
+  for (const selector of selectors) {
+    if (typeof selector !== "string" || !selector.trim()) {
+      continue;
+    }
+    let matched = [];
+    try {
+      matched = Array.from(document.querySelectorAll(selector)).filter((element) => traeAutomationIsVisible(element));
+    } catch (error) {
+      continue;
+    }
+    if (matched.length > 0) {
+      return options.pick === "last" ? matched[matched.length - 1] : matched[0];
+    }
+  }
+  return null;
 }
 
 function traeAutomationGetText(element) {
@@ -134,6 +147,13 @@ function traeAutomationSetValue(element, value) {
     };
   }
 
+  element.dispatchEvent(new MouseEvent("mousedown", {
+    bubbles: true,
+    cancelable: true
+  }));
+  if (typeof element.click === "function") {
+    element.click();
+  }
   element.focus();
 
   if (element.isContentEditable) {
@@ -196,6 +216,20 @@ function traeAutomationSubmit(composer, sendButton, submitMode) {
     reason: "submit_missing"
   };
 }
+
+function traeAutomationIsButtonDisabled(element) {
+  if (!element) {
+    return false;
+  }
+  if (element.disabled === true) {
+    return true;
+  }
+  const ariaDisabled = element.getAttribute("aria-disabled");
+  if (ariaDisabled === "true") {
+    return true;
+  }
+  return typeof element.className === "string" && /(^|\\s)disabled(\\s|$)/.test(element.className);
+}
 `;
 
 function buildReadinessExpression(config) {
@@ -208,11 +242,11 @@ function buildReadinessExpression(config) {
     const newChatSelectors = ${JSON.stringify(config.newChatSelectors)};
     const submitMode = ${JSON.stringify(config.submitMode)};
     const requireResponseSelector = ${JSON.stringify(config.requireResponseSelector)};
-    const composer = traeAutomationPickLastVisible(composerSelectors);
-    const sendButton = traeAutomationPickLastVisible(sendButtonSelectors);
+    const composer = traeAutomationPickVisible(composerSelectors);
+    const sendButton = traeAutomationPickVisible(sendButtonSelectors);
     const responseMatches = traeAutomationSnapshotResponses(responseSelectors);
     const activityMatches = traeAutomationSnapshotResponses(activitySelectors, { allowHiddenText: true });
-    const newChatButton = traeAutomationPickLastVisible(newChatSelectors);
+    const newChatButton = traeAutomationPickVisible(newChatSelectors);
     const composerFound = Boolean(composer);
     const sendButtonFound = Boolean(sendButton);
     const responseSelectorFound = responseMatches.length > 0;
@@ -248,7 +282,7 @@ function buildPrepareSessionExpression(config) {
   return `(() => {
     ${BROWSER_HELPERS_SOURCE}
     const newChatSelectors = ${JSON.stringify(config.newChatSelectors)};
-    const button = traeAutomationPickLastVisible(newChatSelectors);
+    const button = traeAutomationPickVisible(newChatSelectors);
     if (!button) {
       return {
         clicked: false
@@ -270,8 +304,8 @@ function buildSubmitExpression(config, payload = {}) {
     const sendButtonSelectors = ${JSON.stringify(config.sendButtonSelectors)};
     const submitMode = ${JSON.stringify(config.submitMode)};
     const content = ${JSON.stringify(String(payload.content || ""))};
-    const composer = traeAutomationPickLastVisible(composerSelectors);
-    const sendButton = traeAutomationPickLastVisible(sendButtonSelectors);
+    const composer = traeAutomationPickVisible(composerSelectors);
+    const sendButton = traeAutomationPickVisible(sendButtonSelectors);
     const setValueResult = traeAutomationSetValue(composer, content);
     if (!setValueResult.ok) {
       return {
@@ -295,8 +329,8 @@ function buildPrepareInputExpression(config) {
     ${BROWSER_HELPERS_SOURCE}
     const composerSelectors = ${JSON.stringify(config.composerSelectors)};
     const sendButtonSelectors = ${JSON.stringify(config.sendButtonSelectors)};
-    const composer = traeAutomationPickLastVisible(composerSelectors);
-    const sendButton = traeAutomationPickLastVisible(sendButtonSelectors);
+    const composer = traeAutomationPickVisible(composerSelectors);
+    const sendButton = traeAutomationPickVisible(sendButtonSelectors);
     if (!composer) {
       return {
         ok: false,
@@ -304,6 +338,13 @@ function buildPrepareInputExpression(config) {
       };
     }
 
+    composer.dispatchEvent(new MouseEvent("mousedown", {
+      bubbles: true,
+      cancelable: true
+    }));
+    if (typeof composer.click === "function") {
+      composer.click();
+    }
     composer.focus();
 
     // Clear stale visible text before the next insertion attempt.
@@ -342,8 +383,8 @@ function buildTriggerSubmitExpression(config) {
     const composerSelectors = ${JSON.stringify(config.composerSelectors)};
     const sendButtonSelectors = ${JSON.stringify(config.sendButtonSelectors)};
     const submitMode = ${JSON.stringify(config.submitMode)};
-    const composer = traeAutomationPickLastVisible(composerSelectors);
-    const sendButton = traeAutomationPickLastVisible(sendButtonSelectors);
+    const composer = traeAutomationPickVisible(composerSelectors);
+    const sendButton = traeAutomationPickVisible(sendButtonSelectors);
     if (!composer) {
       return {
         ok: false,
@@ -356,7 +397,8 @@ function buildTriggerSubmitExpression(config) {
       composer: traeAutomationDescribeElement(composer),
       sendButton: traeAutomationDescribeElement(sendButton),
       submitResult,
-      composerText: traeAutomationGetText(composer)
+      composerText: traeAutomationGetText(composer),
+      sendButtonDisabled: traeAutomationIsButtonDisabled(sendButton)
     };
   })()`;
 }

@@ -23,6 +23,7 @@ TraeAPI 是一个给 Trae 桌面版使用的本地 HTTP 桥接服务。
 - 如果你还没配置项目目录，就自动创建一个本地工作目录
 - 先尝试附着到你当前已经打开的 Trae 窗口
 - 如果当前窗口不适合自动化，就自动拉起一个专用 Trae 窗口
+- 条件允许时，会先把你现有本地 Trae 的登录态和关键会话存储复制到这个专用窗口对应的 profile，尽量避免再次登录
 - 启动本地网关服务
 - 自动打开内置聊天页面
 
@@ -92,6 +93,16 @@ curl -N -X POST http://127.0.0.1:8787/v1/chat/stream ^
 - Python: [examples/python/client.py](examples/python/client.py)
 - Node.js: [examples/node/client.mjs](examples/node/client.mjs)
 
+## OpenClaw 集成
+
+如果你希望 OpenClaw 把 Trae 当成一个 IDE 工具来使用，直接看原生插件说明：[integrations/openclaw-trae-plugin](integrations/openclaw-trae-plugin/README.md)。
+
+这个插件会在 OpenClaw 里暴露 `trae_status` 和 `trae_delegate`，这样 OpenClaw 继续使用自己的 LLM，而把 IDE 任务委托给 TraeAPI。
+
+如果你的 OpenClaw 配置用了显式工具策略，请用 `tools.alsoAllow` 或 `agents.list[].tools.alsoAllow` 追加启用插件工具，不要只写插件专用的 `tools.allow`。
+
+如果你想直接照步骤完成联调，见 [docs/openclaw-integration.zh-CN.md](docs/openclaw-integration.zh-CN.md)。
+
 ## 手动启动
 
 如果你不想使用一键启动：
@@ -141,6 +152,8 @@ curl http://127.0.0.1:8787/ready
 - `TRAE_QUICKSTART_USE_ISOLATED_PROFILE`: 是否允许 quickstart 自动切换到独立 Trae 窗口
 - `TRAE_QUICKSTART_REMOTE_DEBUGGING_PORT`: 独立 quickstart 窗口使用的调试端口
 - `TRAE_QUICKSTART_USER_DATA_DIR`: 独立 quickstart 窗口使用的 profile 目录
+- `TRAE_QUICKSTART_PROFILE_SEED`: 是否把现有本地 Trae 的登录态和关键存储复制到独立 quickstart profile
+- `TRAE_QUICKSTART_PROFILE_SEED_SOURCE_DIR`: 指定用于复制登录态的本地 Trae profile 根目录
 - `TRAE_QUICKSTART_OPEN_CHAT`: quickstart 成功后是否自动打开 `/chat`
 - `TRAE_COMPOSER_SELECTORS`: 输入框 selector
 - `TRAE_SEND_BUTTON_SELECTORS`: 发送按钮 selector

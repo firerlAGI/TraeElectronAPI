@@ -1,0 +1,70 @@
+{
+  "id": "trae-ide",
+  "name": "Trae IDE",
+  "version": "0.1.0",
+  "description": "Delegate IDE tasks from OpenClaw to a local TraeAPI instance that drives the Trae desktop app.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "default": "http://127.0.0.1:8787"
+      },
+      "token": {
+        "type": "string",
+        "default": ""
+      },
+      "autoStart": {
+        "type": "boolean",
+        "default": false
+      },
+      "quickstartCommand": {
+        "type": "string",
+        "default": ""
+      },
+      "quickstartCwd": {
+        "type": "string",
+        "default": ""
+      },
+      "readyTimeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "default": 45000
+      },
+      "requestTimeoutMs": {
+        "type": "integer",
+        "minimum": 5000,
+        "default": 180000
+      }
+    }
+  },
+  "uiHints": {
+    "baseUrl": {
+      "label": "TraeAPI Base URL",
+      "placeholder": "http://127.0.0.1:8787"
+    },
+    "token": {
+      "label": "Bearer Token",
+      "sensitive": true,
+      "placeholder": "Optional"
+    },
+    "autoStart": {
+      "label": "Auto-start TraeAPI"
+    },
+    "quickstartCommand": {
+      "label": "Quickstart Command",
+      "placeholder": "E:\\\\tiy\\\\chajian2\\\\start-traeapi.cmd"
+    },
+    "quickstartCwd": {
+      "label": "Quickstart Working Directory",
+      "placeholder": "E:\\\\tiy\\\\chajian2"
+    },
+    "readyTimeoutMs": {
+      "label": "Ready Timeout (ms)"
+    },
+    "requestTimeoutMs": {
+      "label": "Request Timeout (ms)"
+    }
+  }
+}

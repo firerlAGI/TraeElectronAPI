@@ -1,0 +1,39 @@
+{
+  "plugins": {
+    "load": {
+      "paths": [
+        "E:\\tiy\\chajian2\\integrations\\openclaw-trae-plugin"
+      ]
+    },
+    "entries": {
+      "trae-ide": {
+        "enabled": true,
+        "config": {
+          "baseUrl": "http://127.0.0.1:8787",
+          "autoStart": true,
+          "quickstartCommand": "E:\\tiy\\chajian2\\start-traeapi.cmd",
+          "quickstartCwd": "E:\\tiy\\chajian2"
+        }
+      }
+    }
+  },
+  "tools": {
+    "alsoAllow": [
+      "trae_status",
+      "trae_delegate"
+    ]
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "tools": {
+          "alsoAllow": [
+            "trae_status",
+            "trae_delegate"
+          ]
+        }
+      }
+    ]
+  }
+}

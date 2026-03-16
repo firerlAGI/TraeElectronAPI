@@ -23,6 +23,7 @@ On the first run, TraeAPI will:
 - create a local workspace folder if you did not configure one yet
 - try to attach to your existing Trae window first
 - automatically launch a dedicated Trae window if the existing one is not automation-ready
+- seed that dedicated Trae profile from your existing local Trae data when possible so you do not have to log in again
 - start the local gateway
 - open the built-in chat page in your browser
 
@@ -92,6 +93,16 @@ Examples:
 - Python: [examples/python/client.py](examples/python/client.py)
 - Node.js: [examples/node/client.mjs](examples/node/client.mjs)
 
+## OpenClaw Integration
+
+If you want OpenClaw to use Trae as an IDE tool, use the native plugin in [integrations/openclaw-trae-plugin](integrations/openclaw-trae-plugin/README.md).
+
+That plugin exposes `trae_status` and `trae_delegate` inside OpenClaw, so OpenClaw can keep using its own LLM while delegating IDE work to Trae through TraeAPI.
+
+If your OpenClaw config uses explicit tool policy, enable the plugin additively with `tools.alsoAllow` or `agents.list[].tools.alsoAllow`, not a plugin-only `tools.allow`.
+
+For a step-by-step user guide, see [docs/openclaw-integration.md](docs/openclaw-integration.md).
+
 ## Manual Setup
 
 If you do not want the one-click launcher:
@@ -141,6 +152,8 @@ Important settings:
 - `TRAE_QUICKSTART_USE_ISOLATED_PROFILE`: lets quickstart fall back to a dedicated Trae window automatically
 - `TRAE_QUICKSTART_REMOTE_DEBUGGING_PORT`: CDP port for the dedicated quickstart window
 - `TRAE_QUICKSTART_USER_DATA_DIR`: Chromium profile directory for the dedicated quickstart window
+- `TRAE_QUICKSTART_PROFILE_SEED`: enables copying login/session state from the existing local Trae profile into the isolated quickstart profile
+- `TRAE_QUICKSTART_PROFILE_SEED_SOURCE_DIR`: override the local Trae profile root used for isolated-profile seeding
 - `TRAE_QUICKSTART_OPEN_CHAT`: automatically opens `/chat` after quickstart is ready
 - `TRAE_COMPOSER_SELECTORS`: selectors for the input area
 - `TRAE_SEND_BUTTON_SELECTORS`: selectors for the send button

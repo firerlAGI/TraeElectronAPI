@@ -19,6 +19,33 @@ This folder was created by the TraeAPI quickstart launcher.
 const DEFAULT_HEALTH_TIMEOUT_MS = 15000;
 const DEFAULT_AUTOMATION_READY_TIMEOUT_MS = 20000;
 const DEFAULT_TRAE_START_TIMEOUT_MS = 30000;
+const DEFAULT_PROFILE_SEED_MARKER = ".traeapi-profile-seed.json";
+const QUICKSTART_PROFILE_SEED_ENTRIES = [
+  "Local State",
+  "Preferences",
+  "Network",
+  "Local Storage",
+  "Session Storage",
+  "IndexedDB",
+  "WebStorage",
+  "SharedStorage",
+  path.join("User", "globalStorage"),
+  path.join("User", "settings.json"),
+  path.join("Partitions", "trae-webview", "Network"),
+  path.join("Partitions", "trae-webview", "Local Storage"),
+  path.join("Partitions", "trae-webview", "Session Storage"),
+  path.join("Partitions", "trae-webview", "IndexedDB"),
+  path.join("Partitions", "trae-webview", "WebStorage"),
+  path.join("Partitions", "trae-webview", "SharedStorage"),
+  path.join("Partitions", "trae-webview", "Preferences"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "Network"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "Local Storage"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "Session Storage"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "IndexedDB"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "WebStorage"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "SharedStorage"),
+  path.join("Partitions", "icube-web-crawler-shared-session-v1.0", "Preferences")
+];
 
 function pathExists(filePath) {
   return Boolean(filePath) && fs.existsSync(filePath);
@@ -40,6 +67,134 @@ function normalizePathInput(value) {
     return normalized.slice(1, -1);
   }
   return normalized;
+}
+
+function resolveDefaultTraeUserDataDir() {
+  if (!process.env.APPDATA) {
+    return "";
+  }
+  return path.join(process.env.APPDATA, "Trae");
+}
+
+function removePathIfExists(targetPath) {
+  if (!pathExists(targetPath)) {
+    return;
+  }
+  fs.rmSync(targetPath, {
+    recursive: true,
+    force: true
+  });
+}
+
+function copyPathRecursive(sourcePath, targetPath, summary) {
+  const stats = fs.lstatSync(sourcePath);
+  if (stats.isDirectory()) {
+    fs.mkdirSync(targetPath, { recursive: true });
+    for (const entryName of fs.readdirSync(sourcePath)) {
+      copyPathRecursive(path.join(sourcePath, entryName), path.join(targetPath, entryName), summary);
+    }
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.copyFileSync(sourcePath, targetPath);
+  summary.filesCopied += 1;
+}
+
+function seedIsolatedProfileFromExistingTrae(config, runtime) {
+  if (!config.quickstartProfileSeed || !runtime?.userDataDir) {
+    return null;
+  }
+
+  const requestedSourceDir = normalizePathInput(
+    config.quickstartProfileSeedSourceDir || process.env.TRAE_QUICKSTART_PROFILE_SEED_SOURCE_DIR || resolveDefaultTraeUserDataDir()
+  );
+  if (!requestedSourceDir || !pathExists(requestedSourceDir)) {
+    return null;
+  }
+
+  const sourceDir = path.resolve(requestedSourceDir);
+  const targetDir = path.resolve(runtime.userDataDir);
+  if (sourceDir === targetDir) {
+    return null;
+  }
+
+  fs.mkdirSync(targetDir, { recursive: true });
+  const summary = {
+    sourceDir,
+    targetDir,
+    filesCopied: 0,
+    entriesCopied: [],
+    skippedEntries: []
+  };
+
+  for (const relativeEntry of QUICKSTART_PROFILE_SEED_ENTRIES) {
+    const sourceEntry = path.join(sourceDir, relativeEntry);
+    if (!pathExists(sourceEntry)) {
+      summary.skippedEntries.push(relativeEntry);
+      continue;
+    }
+
+    const targetEntry = path.join(targetDir, relativeEntry);
+    removePathIfExists(targetEntry);
+
+    try {
+      copyPathRecursive(sourceEntry, targetEntry, summary);
+      summary.entriesCopied.push(relativeEntry);
+    } catch (error) {
+      summary.skippedEntries.push(relativeEntry);
+      console.warn(
+        JSON.stringify(
+          {
+            code: "QUICKSTART_PROFILE_SEED_ENTRY_FAILED",
+            message: "A Trae profile entry could not be copied into the isolated quickstart profile.",
+            entry: relativeEntry,
+            details: {
+              message: error.message
+            }
+          },
+          null,
+          2
+        )
+      );
+    }
+  }
+
+  const markerPath = path.join(targetDir, DEFAULT_PROFILE_SEED_MARKER);
+  fs.writeFileSync(
+    markerPath,
+    JSON.stringify(
+      {
+        sourceDir,
+        targetDir,
+        filesCopied: summary.filesCopied,
+        entriesCopied: summary.entriesCopied,
+        skippedEntries: summary.skippedEntries,
+        seededAt: new Date().toISOString()
+      },
+      null,
+      2
+    ),
+    "utf8"
+  );
+
+  console.log(
+    JSON.stringify(
+      {
+        code: "QUICKSTART_PROFILE_SEEDED",
+        message: "Seeded the isolated Trae profile from the existing local Trae profile.",
+        sourceDir,
+        targetDir,
+        filesCopied: summary.filesCopied,
+        entriesCopied: summary.entriesCopied.length,
+        skippedEntries: summary.skippedEntries.length
+      },
+      null,
+      2
+    )
+  );
+
+  return summary;
 }
 
 function ensureEnvFile() {
@@ -150,6 +305,10 @@ async function ensureConfig() {
   summary.quickstartRemoteDebuggingPort = Number(process.env.TRAE_QUICKSTART_REMOTE_DEBUGGING_PORT || 9333);
   summary.quickstartUserDataDir = String(
     process.env.TRAE_QUICKSTART_USER_DATA_DIR || path.join(ROOT_DIR, ".runtime", "trae-quickstart-profile")
+  ).trim();
+  summary.quickstartProfileSeed = isTrueLike(process.env.TRAE_QUICKSTART_PROFILE_SEED, true);
+  summary.quickstartProfileSeedSourceDir = String(
+    process.env.TRAE_QUICKSTART_PROFILE_SEED_SOURCE_DIR || resolveDefaultTraeUserDataDir()
   ).trim();
   summary.quickstartOpenChat = isTrueLike(process.env.TRAE_QUICKSTART_OPEN_CHAT, true);
   return summary;
@@ -440,6 +599,7 @@ async function ensureTraeWindowReady(config) {
   );
 
   fs.mkdirSync(runtimePlan.isolated.userDataDir, { recursive: true });
+  seedIsolatedProfileFromExistingTrae(config, runtimePlan.isolated);
   const isolatedAttempt = await attemptRuntime(runtimePlan.isolated);
   if (isolatedAttempt.readiness?.ready) {
     return isolatedAttempt;
