@@ -35,6 +35,7 @@ The real success condition is not just "the gateway is up". It is that OpenClaw 
 
 ## Docs
 
+- [AI Install Guide (Chinese)](AI_INSTALL.zh-CN.md)
 - [Install Guide](docs/install.md)
 - [OpenClaw Integration Guide](docs/openclaw-integration.md)
 - [FAQ](docs/faq.md)

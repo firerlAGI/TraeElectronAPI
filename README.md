@@ -47,6 +47,7 @@ TraeAPI 是一个让 OpenClaw 调用 Trae 桌面端作为 IDE 工具的本地桥
 
 ## 文档入口
 
+- [AI 安装说明](AI_INSTALL.zh-CN.md)
 - [OpenClaw 用户安装指南](docs/install.zh-CN.md)
 - [OpenClaw 集成说明](docs/openclaw-integration.zh-CN.md)
 - [常见问题](docs/faq.zh-CN.md)
