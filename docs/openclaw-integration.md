@@ -142,6 +142,16 @@ Then ask OpenClaw something explicit:
 - `Use trae_status exactly once and tell me whether Trae is ready.`
 - `Use trae_delegate exactly once and ask Trae to summarize this project.`
 
+You can also type directly in the OpenClaw chat box:
+
+- `/Trae Analyze this repository and implement the missing login error state`
+
+The plugin will automatically:
+
+- start or wake TraeAPI
+- create a fresh Trae chat
+- hand the text after `/Trae` directly to Trae
+
 ## 5. Troubleshooting
 
 `trae_status` or `trae_delegate` does not appear inside the agent

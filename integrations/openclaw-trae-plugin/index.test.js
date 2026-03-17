@@ -2,8 +2,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const plugin = require("./index");
 
-test("plugin registers status, new chat, and delegate tools", () => {
+test("plugin registers status, new chat, delegate tools, and the trae slash command", () => {
   const registrations = [];
+  const commands = [];
   plugin.register({
     config: {
       plugins: {
@@ -21,6 +22,9 @@ test("plugin registers status, new chat, and delegate tools", () => {
         spec,
         options
       });
+    },
+    registerCommand(spec) {
+      commands.push(spec);
     }
   });
 
@@ -29,4 +33,7 @@ test("plugin registers status, new chat, and delegate tools", () => {
   assert.equal(registrations[1].spec.name, "trae_new_chat");
   assert.equal(registrations[2].spec.name, "trae_delegate");
   assert.equal(registrations[2].options.optional, true);
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0].name, "trae");
+  assert.equal(commands[0].acceptsArgs, true);
 });

@@ -143,6 +143,16 @@ openclaw plugins info trae-ide
 - `Use trae_status exactly once and tell me whether Trae is ready.`
 - `Use trae_delegate exactly once and ask Trae to summarize this project.`
 
+你也可以在 OpenClaw 对话框里直接输入：
+
+- `/Trae 分析当前仓库，并实现缺失的登录错误提示`
+
+插件会自动：
+
+- 启动或唤起 TraeAPI
+- 新建一个 Trae 对话
+- 把 `/Trae` 后面的任务直接交给 Trae
+
 ## 5. 排障
 
 agent 里看不到 `trae_status` 或 `trae_delegate`

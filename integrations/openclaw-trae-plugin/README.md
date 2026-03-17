@@ -16,6 +16,22 @@
 - `trae_new_chat`
 - `trae_delegate`
 
+## 斜杠命令
+
+- `/Trae <任务>`
+
+在 OpenClaw 对话输入框里直接输入 `/Trae`，插件会：
+
+1. 自动确保 TraeAPI 已启动
+2. 新建一个 Trae 对话
+3. 把你在 `/Trae` 后面的任务直接交给 Trae 执行
+
+例如：
+
+```text
+/Trae 分析当前仓库，并实现缺失的登录错误提示
+```
+
 ## 推荐接入方式
 
 1. 先启动 TraeAPI。

@@ -18,6 +18,15 @@ function buildToolContent(text) {
   };
 }
 
+function buildTraeSlashUsage() {
+  return "Usage: /Trae <task>\nExample: /Trae analyze this repository and implement the missing feature.";
+}
+
+function buildTraeSlashResult(sessionId, result) {
+  const summary = formatDelegateToolResult(result);
+  return [`Trae slash command completed.`, `Session ID: ${sessionId || "unknown"}`, summary].join("\n\n");
+}
+
 function register(api) {
   const getClient = () => createTraeApiClient(resolvePluginRuntimeConfig(api));
 
@@ -102,6 +111,42 @@ function register(api) {
       optional: true
     }
   );
+
+  if (typeof api.registerCommand === "function") {
+    api.registerCommand({
+      name: "trae",
+      description: "Create a fresh Trae chat and delegate a coding task directly to Trae.",
+      acceptsArgs: true,
+      async handler(ctx = {}) {
+        const task = String(ctx.args || "").trim();
+        if (!task) {
+          return {
+            text: buildTraeSlashUsage()
+          };
+        }
+
+        const client = getClient();
+        try {
+          const created = await client.createNewChat({
+            allowAutoStart: true
+          });
+          const sessionId = String(created?.data?.session?.sessionId || "").trim();
+          const result = await client.delegateTask({
+            task,
+            sessionId: sessionId || undefined,
+            allowAutoStart: true
+          });
+          return {
+            text: buildTraeSlashResult(sessionId, result)
+          };
+        } catch (error) {
+          return {
+            text: `Trae slash command failed.\n\n${error.message || "Unknown error"}`
+          };
+        }
+      }
+    });
+  }
 }
 
 module.exports = {

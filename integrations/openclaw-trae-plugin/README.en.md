@@ -16,6 +16,22 @@ This is not a model-provider integration. OpenClaw keeps using its own LLM. The 
 - `trae_new_chat`
 - `trae_delegate`
 
+## Slash Command
+
+- `/Trae <task>`
+
+Type `/Trae` directly in the OpenClaw chat box. The plugin will:
+
+1. Ensure TraeAPI is running
+2. Create a fresh Trae chat
+3. Delegate the task text after `/Trae` directly to Trae
+
+Example:
+
+```text
+/Trae Analyze this repository and implement the missing login error state.
+```
+
 ## Recommended Setup
 
 1. Start TraeAPI first.
