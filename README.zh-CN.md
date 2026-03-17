@@ -26,6 +26,38 @@ TraeAPI 是一个让 OpenClaw 把 Trae 桌面端当作 IDE 工具来调用的本
 
 如果你只是想直接调本地 HTTP API，也仍然支持，但那不是主要用户路径。
 
+## 给 OpenClaw 的安装入口
+
+如果你是让 OpenClaw 帮你安装，优先让它按下面规则执行：
+
+1. 先读 [AGENTS.md](AGENTS.md) 和 [AI_INSTALL.zh-CN.md](AI_INSTALL.zh-CN.md)
+2. 如果仓库已经在本地，直接执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
+```
+
+3. 如果仓库还不在本地，优先执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap-openclaw-integration.ps1
+```
+
+4. 安装完成后必须验证：
+
+```powershell
+openclaw plugins info trae-ide
+openclaw config validate
+```
+
+5. 重启 OpenClaw Gateway 后，再测试：
+
+```text
+Use trae_status exactly once and tell me whether Trae is ready.
+```
+
+用户可直接复制的对话模板见 [docs/openclaw-chat-prompts.zh-CN.md](docs/openclaw-chat-prompts.zh-CN.md)。
+
 ## 快速开始
 
 ### Windows 一键启动

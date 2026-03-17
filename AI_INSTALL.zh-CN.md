@@ -2,6 +2,41 @@
 
 这份文档是给 OpenClaw 或其他 AI 助手看的，目标是让 AI 从 GitHub 开始，把 TraeAPI + OpenClaw 插件安装到用户本机。
 
+## OpenClaw 最短执行版
+
+如果你是 OpenClaw，请优先按这个最短路径执行：
+
+1. 先判断仓库是否已经在本地。
+2. 如果仓库已经在本地：
+   - 在仓库根目录执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
+```
+
+3. 如果仓库还不在本地：
+   - 优先执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap-openclaw-integration.ps1
+```
+
+4. 安装完成后必须验证：
+
+```powershell
+openclaw plugins info trae-ide
+openclaw config validate
+```
+
+5. 然后提醒用户：
+   - 重启 OpenClaw Gateway
+   - 再测试 `trae_status`
+
+如果你只能记住一件事，请记住：
+
+- 本地仓库：执行 `scripts/install-openclaw-integration.ps1`
+- 远程仓库：优先执行 `scripts/bootstrap-openclaw-integration.ps1`
+
 ## 目标
 
 把下面这条链路安装到用户机器上：
@@ -65,17 +100,20 @@ openclaw config validate
 
 ## 如果仓库已经在本地
 
-直接执行：
+直接执行，不要绕到 GitHub 安装路径：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
 ```
+
+如果用户明确给出了本地仓库路径，优先在那个路径下执行，不要要求用户手工搬运插件目录。
 
 ## 不要这样做
 
 - 不要执行 `openclaw plugins install <github-url>`
 - 不要让用户手工编辑一大段 JSON，除非 CLI 写配置失败
 - 不要只安装 `integrations/openclaw-trae-plugin`，因为用户还需要 TraeAPI 本体和 `start-traeapi.cmd`
+- 不要把“已经下载仓库”误当成“已经安装完成”
 
 ## 成功标准
 
@@ -85,3 +123,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-i
 - `openclaw config validate` 成功
 - OpenClaw 可以调用 `trae_status`
 - TraeAPI 可以通过 `start-traeapi.cmd` 启动
+
+## OpenClaw 应向用户报告什么
+
+安装结束时，优先用下面这种格式向用户报告：
+
+1. 当前使用的是哪条安装路径：
+   - 本地仓库安装
+   - 或 GitHub bootstrap 安装
+2. 两条验证命令是否成功：
+   - `openclaw plugins info trae-ide`
+   - `openclaw config validate`
+3. 是否需要用户重启 OpenClaw Gateway
+4. 给用户一条可直接复制的测试语句：
+   - `Use trae_status exactly once and tell me whether Trae is ready.`
