@@ -25,5 +25,6 @@
 AI 优先阅读：
 
 - [AI_INSTALL.zh-CN.md](AI_INSTALL.zh-CN.md)
+- [OpenClaw 对话安装模板](docs/openclaw-chat-prompts.zh-CN.md)
 - [OpenClaw 用户安装指南](docs/install.zh-CN.md)
 - [OpenClaw 集成说明](docs/openclaw-integration.zh-CN.md)

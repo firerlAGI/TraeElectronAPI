@@ -59,6 +59,10 @@ openclaw config validate
 5. 再让用户或 AI 执行一次：
    - `Use trae_status exactly once and tell me whether Trae is ready.`
 
+如果需要给中文用户一个可以直接复制到对话里的提示词，见：
+
+- [OpenClaw 对话安装模板](docs/openclaw-chat-prompts.zh-CN.md)
+
 ## 如果仓库已经在本地
 
 直接执行：
