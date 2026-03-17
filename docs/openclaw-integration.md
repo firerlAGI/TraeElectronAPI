@@ -10,7 +10,7 @@ This is not a model-provider integration. OpenClaw keeps using its own configure
 
 ## Prerequisites
 
-- Windows machine with Trae installed.
+- Windows or macOS with Trae installed.
 - A working OpenClaw installation.
 - This repository available locally.
 - Trae must be able to start with `--remote-debugging-port=<port>`.
@@ -19,7 +19,8 @@ This is not a model-provider integration. OpenClaw keeps using its own configure
 
 Recommended path:
 
-1. Double-click `start-traeapi.cmd`
+- Windows: double-click `start-traeapi.cmd`
+- macOS: double-click `start-traeapi.command`
 
 Or from a terminal:
 
@@ -51,7 +52,7 @@ Simplest option while both projects live in local checkouts:
   "plugins": {
     "load": {
       "paths": [
-        "C:\\path\\to\\TraeAPI\\integrations\\openclaw-trae-plugin"
+        "/path/to/TraeAPI/integrations/openclaw-trae-plugin"
       ]
     },
     "entries": {
@@ -60,14 +61,16 @@ Simplest option while both projects live in local checkouts:
         "config": {
           "baseUrl": "http://127.0.0.1:8787",
           "autoStart": true,
-          "quickstartCommand": "C:\\path\\to\\TraeAPI\\start-traeapi.cmd",
-          "quickstartCwd": "C:\\path\\to\\TraeAPI"
+          "quickstartCommand": "/path/to/TraeAPI/start-traeapi.command",
+          "quickstartCwd": "/path/to/TraeAPI"
         }
       }
     }
   }
 }
 ```
+
+Windows users can keep using `C:\path\to\TraeAPI\start-traeapi.cmd` as the `quickstartCommand`.
 
 If your gateway uses a bearer token, also set:
 
@@ -139,17 +142,7 @@ Then ask OpenClaw something explicit:
 - `Use trae_status exactly once and tell me whether Trae is ready.`
 - `Use trae_delegate exactly once and ask Trae to summarize this project.`
 
-## 5. What Was Verified In Live Testing
-
-This repository has been validated with a real local OpenClaw checkout and a real Trae desktop session:
-
-- `trae_status` became visible to the agent after switching to `alsoAllow`
-- `trae_delegate` completed an end-to-end tool call through OpenClaw
-- direct `POST /v1/chat` against TraeAPI also succeeded
-
-One real-world detail: Trae may prepend its own assistant style text such as `SOLO Coder` to replies, so exact-output prompts may still include that prefix.
-
-## Troubleshooting
+## 5. Troubleshooting
 
 `trae_status` or `trae_delegate` does not appear inside the agent
 
@@ -170,9 +163,3 @@ Trae opens but still lands on the wrong screen
 - Make sure Trae is logged in
 - Make sure a project is open
 - Run `npm run inspect:trae` to inspect selectors and page state
-
-TraeAPI falls back to a dedicated window and asks for login again
-
-- Keep `TRAE_QUICKSTART_PROFILE_SEED=1`
-- If your main Trae process is still holding locked cookie files, the seeded isolated profile may still miss part of the login state
-- In that case, restart Trae through TraeAPI so the main logged-in profile is the one exposing the debug port

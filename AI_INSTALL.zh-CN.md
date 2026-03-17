@@ -7,28 +7,39 @@
 如果你是 OpenClaw，请优先按这个最短路径执行：
 
 1. 先判断仓库是否已经在本地。
-2. 如果仓库已经在本地：
+2. 再判断用户平台：
+   - Windows：优先使用 `.ps1`
+   - macOS：优先使用 `.sh`
+3. 如果仓库已经在本地：
    - 在仓库根目录执行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
 ```
 
-3. 如果仓库还不在本地：
+```bash
+bash ./scripts/install-openclaw-integration.sh
+```
+
+4. 如果仓库还不在本地：
    - 优先执行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap-openclaw-integration.ps1
 ```
 
-4. 安装完成后必须验证：
+```bash
+bash ./scripts/bootstrap-openclaw-integration.sh
+```
+
+5. 安装完成后必须验证：
 
 ```powershell
 openclaw plugins info trae-ide
 openclaw config validate
 ```
 
-5. 然后提醒用户：
+6. 然后提醒用户：
    - 重启 OpenClaw Gateway
    - 再测试 `trae_status`
 
@@ -36,6 +47,8 @@ openclaw config validate
 
 - 本地仓库：执行 `scripts/install-openclaw-integration.ps1`
 - 远程仓库：优先执行 `scripts/bootstrap-openclaw-integration.ps1`
+- macOS 本地仓库：执行 `scripts/install-openclaw-integration.sh`
+- macOS 远程仓库：优先执行 `scripts/bootstrap-openclaw-integration.sh`
 
 ## 用户可直接复制给 OpenClaw 的本地安装提示词
 
@@ -48,6 +61,9 @@ openclaw config validate
 请先阅读仓库里的 AGENTS.md 和 AI_INSTALL.zh-CN.md。
 因为仓库已经在本地，请直接在仓库根目录执行：
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
+
+如果你在 macOS 上，请改为：
+bash ./scripts/install-openclaw-integration.sh
 
 不要使用 openclaw plugins install <github-url> 或 git spec。
 安装完成后请验证：
@@ -90,6 +106,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-i
    - 写入最小配置
    - 做安装后验证
 
+如果用户本机是 macOS，优先执行：
+
+1. 直接执行：
+   - `scripts/bootstrap-openclaw-integration.sh`
+2. 这个脚本会：
+   - 从 GitHub 下载仓库 zip
+   - 解压到本地固定目录
+   - 调用本地 shell 安装脚本
+   - 安装 OpenClaw 插件
+   - 写入最小配置
+   - 做安装后验证
+
 ## 首选下载地址
 
 - 仓库 zip：
@@ -127,6 +155,12 @@ openclaw config validate
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
+```
+
+macOS 上直接执行：
+
+```bash
+bash ./scripts/install-openclaw-integration.sh
 ```
 
 如果用户明确给出了本地仓库路径，优先在那个路径下执行，不要要求用户手工搬运插件目录。

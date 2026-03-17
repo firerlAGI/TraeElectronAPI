@@ -18,10 +18,14 @@ This is not a model-provider integration. OpenClaw keeps using its own LLM. The 
 ## Recommended Setup
 
 1. Start TraeAPI first.
+   - Windows: `start-traeapi.cmd`
+   - macOS: `start-traeapi.command`
 2. Load this plugin from a local path in OpenClaw.
 3. Add the plugin tools through `tools.alsoAllow`.
 4. Restart OpenClaw Gateway.
 5. Ask OpenClaw to use `trae_status` or `trae_delegate`.
+
+If `autoStart` is enabled, the plugin can launch the bundled quickstart entry point automatically. On macOS that means `start-traeapi.command` when the repository is available locally.
 
 More docs:
 

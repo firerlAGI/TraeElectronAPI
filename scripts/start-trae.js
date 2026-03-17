@@ -1,5 +1,6 @@
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
+const path = require("node:path");
 const { discoverTraeTarget, getDebuggerVersion } = require("../src/cdp/discovery");
 const { loadEnvFiles } = require("../src/config/env");
 
@@ -40,12 +41,47 @@ function resolveProjectArg() {
   return projectPath;
 }
 
-function resolveTraeLaunchTarget() {
-  const command = String(process.env.TRAE_BIN || "").trim();
-  if (!command) {
-    throw new Error("Set TRAE_BIN to the Trae executable path before running start:trae");
+function resolveMacAppBundleExecutable(command) {
+  const normalized = String(command || "").trim();
+  if (process.platform !== "darwin" || !normalized.toLowerCase().endsWith(".app") || !fs.existsSync(normalized)) {
+    return normalized;
   }
 
+  const directCandidate = path.join(normalized, "Contents", "MacOS", path.basename(normalized, ".app"));
+  if (fs.existsSync(directCandidate)) {
+    return directCandidate;
+  }
+
+  const macOsDir = path.join(normalized, "Contents", "MacOS");
+  if (!fs.existsSync(macOsDir)) {
+    return normalized;
+  }
+
+  for (const entryName of fs.readdirSync(macOsDir)) {
+    const entryPath = path.join(macOsDir, entryName);
+    try {
+      if (fs.statSync(entryPath).isFile()) {
+        return entryPath;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  return normalized;
+}
+
+function resolveTraeLaunchCommand(command) {
+  return resolveMacAppBundleExecutable(command);
+}
+
+function resolveTraeLaunchTarget() {
+  const configuredCommand = String(process.env.TRAE_BIN || "").trim();
+  if (!configuredCommand) {
+    throw new Error("Set TRAE_BIN to the Trae executable path or app bundle before running start:trae");
+  }
+
+  const command = resolveTraeLaunchCommand(configuredCommand);
   const args = parseLaunchArgs(process.env.TRAE_ARGS || "");
   if (!hasRemoteDebuggingPortArg(args)) {
     args.push(`--remote-debugging-port=${REMOTE_DEBUGGING_PORT}`);

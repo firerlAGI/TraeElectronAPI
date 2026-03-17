@@ -1,0 +1,33 @@
+{
+  "plugins": {
+    "load": {
+      "paths": [
+        "/Users/you/TraeAPI/integrations/openclaw-trae-plugin"
+      ]
+    },
+    "entries": {
+      "trae-ide": {
+        "enabled": true,
+        "config": {
+          "baseUrl": "http://127.0.0.1:8787",
+          "autoStart": true,
+          "quickstartCommand": "/Users/you/TraeAPI/start-traeapi.command",
+          "quickstartCwd": "/Users/you/TraeAPI"
+        }
+      }
+    }
+  },
+  "tools": {
+    "alsoAllow": ["trae-ide"]
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "tools": {
+          "alsoAllow": ["trae_status", "trae_delegate"]
+        }
+      }
+    ]
+  }
+}

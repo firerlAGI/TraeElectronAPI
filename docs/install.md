@@ -4,12 +4,14 @@ This guide assumes your goal is to let OpenClaw call Trae as an IDE tool through
 
 ## Recommended Path
 
-For most OpenClaw users on Windows, the intended setup is:
+For most OpenClaw users on Windows or macOS, the intended setup is:
 
-1. Install Node.js 20 or newer.
+1. Install Node.js 22 or newer.
 2. Clone or download this repository.
 3. Run `npm install`.
-4. Double-click [start-traeapi.cmd](../start-traeapi.cmd).
+4. Start TraeAPI:
+   - Windows: double-click [start-traeapi.cmd](../start-traeapi.cmd)
+   - macOS: double-click [start-traeapi.command](../start-traeapi.command)
 5. Load the plugin from [../integrations/openclaw-trae-plugin](../integrations/openclaw-trae-plugin/README.en.md) in OpenClaw.
 6. Restart OpenClaw Gateway.
 7. Ask OpenClaw to call `trae_status` or `trae_delegate`.
@@ -17,12 +19,33 @@ For most OpenClaw users on Windows, the intended setup is:
 On first launch, TraeAPI will try to:
 
 - create `.env` from [`.env.example`](../.env.example)
-- detect `Trae.exe`
+- detect the local Trae executable automatically
 - create a local workspace folder if none is configured
 - attach to your existing Trae window first
 - fall back to a dedicated Trae window when the current one is not automation-ready
 - start the local HTTP gateway
 - open the built-in chat page for diagnostics
+
+## One-Step Plugin Install
+
+If the repository is already local and you want OpenClaw integration with the official CLI, use the platform-specific installer script:
+
+- Windows:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1
+```
+
+- macOS:
+
+```bash
+bash ./scripts/install-openclaw-integration.sh
+```
+
+If the repository is not local yet, use the bootstrap script instead:
+
+- Windows: `scripts/bootstrap-openclaw-integration.ps1`
+- macOS: `scripts/bootstrap-openclaw-integration.sh`
 
 ## Before You Start
 
@@ -52,9 +75,9 @@ Then validate from OpenClaw:
 Direct API testing is optional and mainly useful for debugging:
 
 ```bash
-curl -X POST http://127.0.0.1:8787/v1/chat ^
-  -H "content-type: application/json" ^
-  -d "{\"content\":\"Reply with exactly: OK\"}"
+curl -X POST http://127.0.0.1:8787/v1/chat \
+  -H "content-type: application/json" \
+  -d '{"content":"Reply with exactly: OK"}'
 ```
 
 If the gateway is ready, you should receive a JSON response with Trae output.
@@ -64,8 +87,10 @@ If the gateway is ready, you should receive a JSON response with Trae output.
 If one-click startup is not enough:
 
 1. Copy [`.env.example`](../.env.example) to `.env`.
-2. Set `TRAE_BIN` to your local `Trae.exe`.
-3. Optionally set a fixed `TRAE_PROJECT_DIR`.
+2. Set `TRAE_BIN` to your local Trae executable path.
+   - Windows example: `C:\Path\To\Trae.exe`
+   - macOS example: `/Applications/Trae.app` or `/Applications/Trae.app/Contents/MacOS/Trae`
+3. Optionally set a fixed `TRAE_PROJECT_PATH`.
 4. Run:
 
 ```bash

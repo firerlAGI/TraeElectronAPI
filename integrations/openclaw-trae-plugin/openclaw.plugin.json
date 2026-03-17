@@ -54,11 +54,11 @@
     },
     "quickstartCommand": {
       "label": "Quickstart Command",
-      "placeholder": "C:\\\\path\\\\to\\\\TraeElectronAPI\\\\start-traeapi.cmd"
+      "placeholder": "C:\\path\\to\\TraeAPI\\start-traeapi.cmd or /Users/you/TraeAPI/start-traeapi.command"
     },
     "quickstartCwd": {
       "label": "Quickstart Working Directory",
-      "placeholder": "C:\\\\path\\\\to\\\\TraeElectronAPI"
+      "placeholder": "C:\\path\\to\\TraeElectronAPI or /Users/you/TraeAPI"
     },
     "readyTimeoutMs": {
       "label": "Ready Timeout (ms)"

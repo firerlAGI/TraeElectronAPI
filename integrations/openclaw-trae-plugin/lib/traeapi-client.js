@@ -37,12 +37,35 @@ function normalizeBaseUrl(value) {
   return normalized.replace(/\/+$/, "");
 }
 
-function getBundledQuickstartDefaults() {
+function quoteShellPath(value) {
+  return `"${String(value || "").replaceAll("\\\"", "\\\\\\\"")}"`;
+}
+
+function getBundledQuickstartDefaults(options = {}) {
   const repoRoot = path.resolve(__dirname, "..", "..", "..");
+  const platform = options.platform || process.platform;
+  const nodeExecPath = options.execPath || process.execPath;
   const windowsLauncher = path.join(repoRoot, "start-traeapi.cmd");
-  if (fs.existsSync(windowsLauncher)) {
+  const macLauncher = path.join(repoRoot, "start-traeapi.command");
+  const posixLauncher = path.join(repoRoot, "start-traeapi.sh");
+
+  if (platform === "win32" && fs.existsSync(windowsLauncher)) {
     return {
-      quickstartCommand: `"${windowsLauncher}"`,
+      quickstartCommand: quoteShellPath(windowsLauncher),
+      quickstartCwd: repoRoot
+    };
+  }
+
+  if (platform === "darwin" && fs.existsSync(macLauncher)) {
+    return {
+      quickstartCommand: quoteShellPath(macLauncher),
+      quickstartCwd: repoRoot
+    };
+  }
+
+  if (platform !== "win32" && fs.existsSync(posixLauncher)) {
+    return {
+      quickstartCommand: quoteShellPath(posixLauncher),
       quickstartCwd: repoRoot
     };
   }
@@ -50,7 +73,7 @@ function getBundledQuickstartDefaults() {
   const quickstartScript = path.join(repoRoot, "scripts", "quickstart.js");
   if (fs.existsSync(quickstartScript)) {
     return {
-      quickstartCommand: `"${process.execPath}" "${quickstartScript}"`,
+      quickstartCommand: `${quoteShellPath(nodeExecPath)} ${quoteShellPath(quickstartScript)}`,
       quickstartCwd: repoRoot
     };
   }
@@ -237,7 +260,7 @@ class TraeApiClient {
       detached: true,
       stdio: "ignore",
       shell: true,
-      windowsHide: true
+      windowsHide: process.platform === "win32"
     });
     child.unref();
   }
@@ -380,6 +403,7 @@ module.exports = {
   createTraeApiClient,
   formatDelegateToolResult,
   formatStatusToolResult,
+  getBundledQuickstartDefaults,
   resolvePluginRuntimeConfig,
   stripDuplicateFinalText
 };

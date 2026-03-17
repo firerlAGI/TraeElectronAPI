@@ -69,11 +69,37 @@ function normalizePathInput(value) {
   return normalized;
 }
 
-function resolveDefaultTraeUserDataDir() {
-  if (!process.env.APPDATA) {
-    return "";
+function resolveHomeDirectory(env = process.env) {
+  return String(env.HOME || env.USERPROFILE || "").trim();
+}
+
+function getTraeBinaryPromptLabel(platform = process.platform) {
+  return platform === "darwin"
+    ? "Enter the full path to the Trae executable or .app bundle"
+    : "Enter the full path to the Trae executable";
+}
+
+function resolveDefaultTraeUserDataDir(platform = process.platform, env = process.env) {
+  if (platform === "win32") {
+    if (!env.APPDATA) {
+      return "";
+    }
+    return path.join(env.APPDATA, "Trae");
   }
-  return path.join(process.env.APPDATA, "Trae");
+
+  const homeDir = resolveHomeDirectory(env);
+  if (platform === "darwin") {
+    return homeDir ? path.join(homeDir, "Library", "Application Support", "Trae") : "";
+  }
+
+  if (platform === "linux") {
+    if (env.XDG_CONFIG_HOME) {
+      return path.join(env.XDG_CONFIG_HOME, "Trae");
+    }
+    return homeDir ? path.join(homeDir, ".config", "Trae") : "";
+  }
+
+  return "";
 }
 
 function removePathIfExists(targetPath) {
@@ -205,16 +231,34 @@ function ensureEnvFile() {
   return true;
 }
 
-function buildTraeCandidates() {
-  const candidates = [
-    process.env.TRAE_BIN,
-    "D:\\trae\\Trae\\Trae.exe",
-    process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "Programs", "Trae", "Trae.exe") : "",
-    process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "Trae", "Trae.exe") : "",
-    process.env.ProgramFiles ? path.join(process.env.ProgramFiles, "Trae", "Trae.exe") : "",
-    process.env["ProgramFiles(x86)"] ? path.join(process.env["ProgramFiles(x86)"], "Trae", "Trae.exe") : "",
-    process.env.ProgramW6432 ? path.join(process.env.ProgramW6432, "Trae", "Trae.exe") : ""
-  ];
+function buildTraeCandidates(platform = process.platform, env = process.env) {
+  const candidates = [env.TRAE_BIN];
+  const homeDir = resolveHomeDirectory(env);
+
+  if (platform === "win32") {
+    candidates.push(
+      "D:\\trae\\Trae\\Trae.exe",
+      env.LOCALAPPDATA ? path.join(env.LOCALAPPDATA, "Programs", "Trae", "Trae.exe") : "",
+      env.LOCALAPPDATA ? path.join(env.LOCALAPPDATA, "Trae", "Trae.exe") : "",
+      env.ProgramFiles ? path.join(env.ProgramFiles, "Trae", "Trae.exe") : "",
+      env["ProgramFiles(x86)"] ? path.join(env["ProgramFiles(x86)"], "Trae", "Trae.exe") : "",
+      env.ProgramW6432 ? path.join(env.ProgramW6432, "Trae", "Trae.exe") : ""
+    );
+  }
+
+  if (platform === "darwin") {
+    candidates.push(
+      "/Applications/Trae.app/Contents/MacOS/Trae",
+      "/Applications/Trae.app",
+      homeDir ? path.join(homeDir, "Applications", "Trae.app", "Contents", "MacOS", "Trae") : "",
+      homeDir ? path.join(homeDir, "Applications", "Trae.app") : ""
+    );
+  }
+
+  if (platform === "linux") {
+    candidates.push("/opt/Trae/trae", "/usr/bin/trae", "/usr/local/bin/trae");
+  }
+
   return [...new Set(candidates.map((item) => String(item || "").trim()).filter(Boolean))];
 }
 
@@ -271,7 +315,7 @@ async function ensureConfig() {
   const rl = readline.createInterface({ input, output });
   try {
     if (!traeBin) {
-      traeBin = await promptForExistingPath(rl, "Enter the full path to Trae.exe");
+      traeBin = await promptForExistingPath(rl, getTraeBinaryPromptLabel());
       updates.TRAE_BIN = traeBin;
     }
 
@@ -794,5 +838,9 @@ if (require.main === module) {
 }
 
 module.exports = {
-  main
+  buildTraeCandidates,
+  detectTraeBinary,
+  getTraeBinaryPromptLabel,
+  main,
+  resolveDefaultTraeUserDataDir
 };

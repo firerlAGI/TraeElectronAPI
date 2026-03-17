@@ -5,6 +5,7 @@ const {
   TraeApiClient,
   formatDelegateToolResult,
   formatStatusToolResult,
+  getBundledQuickstartDefaults,
   resolvePluginRuntimeConfig,
   stripDuplicateFinalText
 } = require("./traeapi-client");
@@ -139,4 +140,13 @@ test("TraeApiClient delegates tasks through /v1/chat", async () => {
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("getBundledQuickstartDefaults picks the macOS launcher when available", () => {
+  const defaults = getBundledQuickstartDefaults({
+    platform: "darwin",
+    execPath: "/usr/local/bin/node"
+  });
+
+  assert.equal(defaults.quickstartCommand.includes("start-traeapi.command"), true);
 });

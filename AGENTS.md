@@ -7,15 +7,20 @@
 如果用户要求“安装 Trae 插件到 OpenClaw”，AI 助手应按下面顺序执行，不要自由发挥：
 
 1. 先判断仓库是否已经在本地。
-2. 如果仓库不在本地：
+2. 再判断用户平台：
+   - Windows：优先使用 `.ps1` 脚本
+   - macOS：优先使用 `.sh` 脚本
+3. 如果仓库不在本地：
    - 优先执行 `scripts/bootstrap-openclaw-integration.ps1`
-   - 或先下载 GitHub 仓库 zip，再执行 `scripts/install-openclaw-integration.ps1`
-3. 如果仓库已经在本地：
+   - macOS 上优先执行 `scripts/bootstrap-openclaw-integration.sh`
+   - 或先下载 GitHub 仓库 zip，再执行对应平台的本地安装脚本
+4. 如果仓库已经在本地：
    - 直接执行 `scripts/install-openclaw-integration.ps1`
-4. 安装完成后必须验证：
+   - macOS 上直接执行 `scripts/install-openclaw-integration.sh`
+5. 安装完成后必须验证：
    - `openclaw plugins info trae-ide`
    - `openclaw config validate`
-5. 验证通过后提醒用户：
+6. 验证通过后提醒用户：
    - 重启 OpenClaw Gateway
    - 再调用一次 `trae_status`
 
@@ -23,9 +28,11 @@
 
 1. 如果仓库还不在本地：
    - 优先执行 `scripts/bootstrap-openclaw-integration.ps1`
+   - macOS 上优先执行 `scripts/bootstrap-openclaw-integration.sh`
    - 或先下载 GitHub 仓库 zip，再执行 `scripts/install-openclaw-integration.ps1`
 2. 如果仓库已经在本地：
    - 直接执行 `scripts/install-openclaw-integration.ps1`
+   - macOS 上直接执行 `scripts/install-openclaw-integration.sh`
 3. 不要尝试直接执行：
    - `openclaw plugins install <github-url>`
    - `openclaw plugins install <git-spec>`
@@ -53,6 +60,8 @@
 2. 再给出将要执行的唯一主命令：
    - 本地仓库：`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-openclaw-integration.ps1`
    - 远程仓库：`powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap-openclaw-integration.ps1`
+   - macOS 本地仓库：`bash ./scripts/install-openclaw-integration.sh`
+   - macOS 远程仓库：`bash ./scripts/bootstrap-openclaw-integration.sh`
 3. 最后报告验证结果：
    - `openclaw plugins info trae-ide`
    - `openclaw config validate`

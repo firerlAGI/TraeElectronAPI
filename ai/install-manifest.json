@@ -3,17 +3,24 @@
   "language": "zh-CN",
   "product": "TraeAPI OpenClaw Integration",
   "repo": "https://github.com/firerlAGI/TraeElectronAPI",
-  "preferredPlatform": "windows",
+  "preferredPlatform": "cross-platform",
   "pluginId": "trae-ide",
-  "tools": ["trae_status", "trae_delegate"],
+  "tools": [
+    "trae_status",
+    "trae_delegate"
+  ],
   "source": {
     "repoZipUrl": "https://github.com/firerlAGI/TraeElectronAPI/archive/refs/heads/main.zip",
-    "bootstrapScriptUrl": "https://raw.githubusercontent.com/firerlAGI/TraeElectronAPI/main/scripts/bootstrap-openclaw-integration.ps1"
+    "bootstrapScriptUrl": "https://raw.githubusercontent.com/firerlAGI/TraeElectronAPI/main/scripts/bootstrap-openclaw-integration.ps1",
+    "bootstrapScriptUrlMac": "https://raw.githubusercontent.com/firerlAGI/TraeElectronAPI/main/scripts/bootstrap-openclaw-integration.sh"
   },
   "install": {
     "preferredScript": "scripts/bootstrap-openclaw-integration.ps1",
     "localScript": "scripts/install-openclaw-integration.ps1",
-    "quickstartCommand": "start-traeapi.cmd"
+    "quickstartCommand": "start-traeapi.cmd",
+    "preferredScriptMac": "scripts/bootstrap-openclaw-integration.sh",
+    "localScriptMac": "scripts/install-openclaw-integration.sh",
+    "quickstartCommandMac": "start-traeapi.command"
   },
   "verify": [
     "openclaw plugins info trae-ide",
@@ -23,5 +30,9 @@
     "Do not try to install the plugin from a GitHub URL directly.",
     "Download the repo or bootstrap script first, then install locally.",
     "After install, restart OpenClaw Gateway before calling trae_status."
+  ],
+  "supportedPlatforms": [
+    "windows",
+    "macos"
   ]
 }
