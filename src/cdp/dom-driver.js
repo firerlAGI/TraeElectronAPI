@@ -593,6 +593,8 @@ function createTraeAutomationDriver(options = {}) {
             allowHiddenText: true
           })
         : [];
+    let baselineSnapshot = beforePrepareSnapshot;
+    let baselineActivitySnapshot = beforePrepareActivitySnapshot;
     const preparation = await domAdapter.prepareSession(session, config, {
       sessionId
     });
@@ -610,9 +612,7 @@ function createTraeAutomationDriver(options = {}) {
       await sleep(config.postActionDelayMs);
     }
 
-    let baselineSnapshot = null;
-    let baselineActivitySnapshot = null;
-    if (hasSnapshotContent(beforePrepareSnapshot) || hasSnapshotContent(beforePrepareActivitySnapshot)) {
+    if (hasSnapshotContent(beforePrepareSnapshot)) {
       try {
         const preparedBaseline = await waitForPreparedSession({
           domAdapter,

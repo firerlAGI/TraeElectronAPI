@@ -1,6 +1,6 @@
 {
   "name": "traeelectronapi",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "OpenClaw plugin that delegates IDE tasks to a local TraeAPI instance.",
   "main": "index.js",
   "homepage": "https://github.com/firerlAGI/TraeElectronAPI/tree/main/integrations/openclaw-trae-plugin",

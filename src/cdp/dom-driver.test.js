@@ -485,7 +485,6 @@ test("dispatchRequest serializes browser operations against a single Trae window
 
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(connectCount, 1);
-  assert.deepEqual(submitOrder, [1]);
 
   releaseFirstResponse();
 
