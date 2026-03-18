@@ -6,7 +6,7 @@
   "homepage": "https://github.com/firerlAGI/TraeElectronAPI/tree/main/integrations/openclaw-trae-plugin",
   "repository": {
     "type": "git",
-    "url": "https://github.com/firerlAGI/TraeElectronAPI.git",
+    "url": "git+https://github.com/firerlAGI/TraeElectronAPI.git",
     "directory": "integrations/openclaw-trae-plugin"
   },
   "bugs": {
