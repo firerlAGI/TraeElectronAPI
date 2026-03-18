@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-trae-ide",
+  "name": "traeelectronapi",
   "version": "0.2.0",
   "description": "OpenClaw plugin that delegates IDE tasks to a local TraeAPI instance.",
   "main": "index.js",

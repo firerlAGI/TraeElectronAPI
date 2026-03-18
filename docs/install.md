@@ -52,7 +52,7 @@ If the repository is not local yet, use the bootstrap script instead:
 If you want users to receive plugin updates directly through OpenClaw later, install the npm package:
 
 ```bash
-openclaw plugins install openclaw-trae-ide
+openclaw plugins install traeelectronapi
 openclaw plugins enable trae-ide
 ```
 

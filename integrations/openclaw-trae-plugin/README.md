@@ -15,7 +15,7 @@
 如果你希望后续通过 OpenClaw 直接收插件更新，优先用 npm 安装版：
 
 ```bash
-openclaw plugins install openclaw-trae-ide
+openclaw plugins install traeelectronapi
 openclaw plugins enable trae-ide
 ```
 

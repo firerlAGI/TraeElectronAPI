@@ -15,7 +15,7 @@ This is not a model-provider integration. OpenClaw keeps using its own LLM. The 
 If you want users to receive future plugin updates through OpenClaw, install the npm distribution:
 
 ```bash
-openclaw plugins install openclaw-trae-ide
+openclaw plugins install traeelectronapi
 openclaw plugins enable trae-ide
 ```
 

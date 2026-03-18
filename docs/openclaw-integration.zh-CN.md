@@ -99,7 +99,7 @@ Windows 用户可以继续使用 `"C:\path\to\TraeAPI\start-traeapi.cmd"` 作为
 如果你希望用户后续通过 OpenClaw 直接收插件更新，可以改用 npm 安装：
 
 ```bash
-openclaw plugins install openclaw-trae-ide
+openclaw plugins install traeelectronapi
 openclaw plugins enable trae-ide
 ```
 

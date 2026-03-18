@@ -15,7 +15,7 @@ test("syncOpenClawPluginRuntime copies the bundled runtime payload", () => {
   fs.writeFileSync(path.join(repoRoot, "package.json"), JSON.stringify({ name: "repo", version: "9.9.9" }), "utf8");
   fs.writeFileSync(
     path.join(pluginDir, "package.json"),
-    JSON.stringify({ name: "openclaw-trae-ide", version: "1.2.3", engines: { node: ">=22" } }),
+    JSON.stringify({ name: "traeelectronapi", version: "1.2.3", engines: { node: ">=22" } }),
     "utf8"
   );
   fs.writeFileSync(path.join(repoRoot, ".env.example"), "TRAE_BIN=\n", "utf8");
@@ -29,7 +29,7 @@ test("syncOpenClawPluginRuntime copies the bundled runtime payload", () => {
 
   try {
     const summary = syncOpenClawPluginRuntime({ repoRoot, pluginDir });
-    assert.equal(summary.pluginPackage, "openclaw-trae-ide");
+    assert.equal(summary.pluginPackage, "traeelectronapi");
     const runtimeRoot = path.join(pluginDir, "runtime", "traeapi");
     assert.equal(summary.runtimeRoot, runtimeRoot);
     assert.equal(fs.existsSync(path.join(runtimeRoot, "scripts", "quickstart.js")), true);

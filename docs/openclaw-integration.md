@@ -98,7 +98,7 @@ You can also start from repository examples instead of writing the config from s
 If you want users to receive plugin updates directly through OpenClaw later, install the npm distribution:
 
 ```bash
-openclaw plugins install openclaw-trae-ide
+openclaw plugins install traeelectronapi
 openclaw plugins enable trae-ide
 ```
 

@@ -52,7 +52,7 @@ bash ./scripts/install-openclaw-integration.sh
 如果你的目标是让用户后续直接通过 OpenClaw 收插件更新，推荐把插件作为 npm 包安装：
 
 ```bash
-openclaw plugins install openclaw-trae-ide
+openclaw plugins install traeelectronapi
 openclaw plugins enable trae-ide
 ```
 
