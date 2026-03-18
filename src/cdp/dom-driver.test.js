@@ -127,6 +127,48 @@ test("getDiagnostics returns target metadata and selector match summaries", asyn
   assert.equal(diagnostics.diagnostics.genericCandidates.button[0].tagName, "button");
 });
 
+test("prepareSession clicks Trae new chat and marks the session as prepared", async () => {
+  const driver = createTraeAutomationDriver({
+    activitySelectors: [],
+    postActionDelayMs: 0,
+    discoverTarget: async () => createDiscoveryResult(),
+    connectToTarget: async () => ({
+      async close() {}
+    }),
+    domAdapter: {
+      async inspectReadiness() {
+        return {
+          ready: true
+        };
+      },
+      async captureResponseSnapshot() {
+        return [];
+      },
+      async prepareSession() {
+        return {
+          clicked: true,
+          trigger: "new_chat"
+        };
+      },
+      async submitPrompt() {
+        return {
+          ok: true
+        };
+      }
+    }
+  });
+
+  const prepared = await driver.prepareSession({
+    sessionId: "session-new-chat"
+  });
+
+  assert.equal(prepared.status, "ok");
+  assert.equal(prepared.prepared, true);
+  assert.equal(prepared.sessionId, "session-new-chat");
+  assert.equal(prepared.preparation.trigger, "new_chat");
+  assert.equal(driver.getSnapshot().preparedSessionCount, 1);
+});
+
 test("dispatchRequest collects incremental DOM updates until the response becomes idle", async () => {
   const observed = [];
   let captureCallCount = 0;

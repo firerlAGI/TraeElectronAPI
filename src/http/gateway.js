@@ -550,6 +550,40 @@ function createGatewayServer(options = {}) {
     }
   }
 
+  async function prepareGatewaySession(session) {
+    const { driver } = await requireAutomationDriver();
+    if (typeof driver.prepareSession !== "function") {
+      throw new ApiError("AUTOMATION_PREPARE_UNAVAILABLE", "Trae automation does not support explicit session preparation", 503);
+    }
+
+    session.status = "running";
+    session.updatedAt = new Date().toISOString();
+
+    try {
+      const result = await driver.prepareSession({
+        channel: "trae:session:prepare",
+        sessionId: session.sessionId
+      });
+      session.status = "idle";
+      session.updatedAt = new Date().toISOString();
+      session.lastRequestId = result.requestId || null;
+      session.lastPreparation = {
+        requestId: result.requestId || null,
+        preparedAt: result.finishedAt || new Date().toISOString(),
+        preparation: sanitizeSensitiveData(result.preparation || {})
+      };
+      return result;
+    } catch (error) {
+      session.status = "error";
+      session.updatedAt = new Date().toISOString();
+      session.lastError =
+        typeof driver.normalizeError === "function"
+          ? driver.normalizeError(error, "AUTOMATION_PREPARE_FAILED")
+          : normalizeAutomationError(error, "AUTOMATION_PREPARE_FAILED");
+      throw new ApiError(session.lastError.code, session.lastError.message, 502, session.lastError.details);
+    }
+  }
+
   async function dispatchStreamMessage(res, session, body, meta, streamMeta = {}) {
     const { driver } = await requireAutomationDriver();
     res.writeHead(200, {
@@ -653,7 +687,15 @@ function createGatewayServer(options = {}) {
 
     const body = await readJsonBody(req);
     const session = createSessionRecord(body.metadata || {});
-    const data = { session };
+    let preparation = null;
+    if (body.prepare === true) {
+      preparation = await prepareGatewaySession(session);
+    }
+    const data = {
+      session,
+      prepared: body.prepare === true,
+      ...(preparation ? { preparation } : {})
+    };
     setIdempotencyEntry(req.method, pathname, meta.idempotencyKey, {
       statusCode: 201,
       data

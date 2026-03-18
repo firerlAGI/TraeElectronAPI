@@ -47,6 +47,35 @@ If the repository is not local yet, use the bootstrap script instead:
 - Windows: `scripts/bootstrap-openclaw-integration.ps1`
 - macOS: `scripts/bootstrap-openclaw-integration.sh`
 
+## Install For Ongoing Updates
+
+If you want users to receive plugin updates directly through OpenClaw later, install the npm package:
+
+```bash
+openclaw plugins install traeelectronapi
+openclaw plugins enable trae-ide
+```
+
+When a new version is published, users update with:
+
+```bash
+openclaw plugins update trae-ide
+```
+
+Two important constraints:
+
+- the npm package now ships both the OpenClaw plugin and the full TraeAPI runtime
+- when users run `openclaw plugins update trae-ide`, the plugin and gateway capabilities update together
+
+To let the plugin auto-start the bundled runtime, also set:
+
+```bash
+openclaw config set plugins.entries.trae-ide.enabled true --strict-json
+openclaw config set plugins.entries.trae-ide.config.autoStart true --strict-json
+openclaw config set plugins.entries.trae-ide.config.baseUrl "http://127.0.0.1:8787"
+openclaw config validate
+```
+
 ## Before You Start
 
 Make sure:

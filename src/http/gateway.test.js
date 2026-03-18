@@ -6,8 +6,10 @@ const { createGatewayServer, startGatewayServer } = require("./gateway");
 
 function createMockAutomationDriver() {
   const calls = [];
+  const preparedSessions = [];
   return {
     calls,
+    preparedSessions,
     async getReadiness() {
       return {
         ready: true,
@@ -34,6 +36,23 @@ function createMockAutomationDriver() {
         code: error.code || fallbackCode,
         message: error.message || "Unknown automation error",
         details: error.details || {}
+      };
+    },
+    async prepareSession(payload) {
+      preparedSessions.push(payload);
+      const requestId = `prepare-${preparedSessions.length}`;
+      return {
+        status: "ok",
+        requestId,
+        channel: payload.channel || "trae:session:prepare",
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        prepared: true,
+        sessionId: payload.sessionId,
+        preparation: {
+          clicked: true,
+          trigger: "new_chat"
+        }
       };
     },
     dispatchRequest(payload) {
@@ -190,6 +209,38 @@ test("session creation, message send, status lookup and idempotent replay", asyn
   assert.equal(sessionStatusResponse.json.data.session.status, "completed");
 
   await new Promise((resolve) => server.close(resolve));
+});
+
+test("session creation can immediately prepare a fresh Trae chat", async () => {
+  const driver = createMockAutomationDriver();
+  const { server } = createGatewayServer({
+    automationDriver: driver
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+
+  try {
+    const createSessionResponse = await sendJsonRequest(port, {
+      method: "POST",
+      path: "/v1/sessions",
+      body: {
+        metadata: {
+          source: "test"
+        },
+        prepare: true
+      }
+    });
+
+    assert.equal(createSessionResponse.statusCode, 201);
+    assert.equal(createSessionResponse.json.success, true);
+    assert.equal(createSessionResponse.json.data.prepared, true);
+    assert.equal(createSessionResponse.json.data.preparation.preparation.trigger, "new_chat");
+    assert.equal(driver.preparedSessions.length, 1);
+    assert.equal(driver.preparedSessions[0].sessionId, createSessionResponse.json.data.session.sessionId);
+    assert.equal(createSessionResponse.json.data.session.lastPreparation.preparation.trigger, "new_chat");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
 
 test("concurrent session requests stay associated with the correct response", async () => {

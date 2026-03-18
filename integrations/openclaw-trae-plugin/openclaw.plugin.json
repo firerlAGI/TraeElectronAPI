@@ -1,7 +1,7 @@
 {
   "id": "trae-ide",
   "name": "Trae IDE",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Delegate IDE tasks from OpenClaw to a local TraeAPI instance that drives the Trae desktop app.",
   "configSchema": {
     "type": "object",
@@ -54,7 +54,7 @@
     },
     "quickstartCommand": {
       "label": "Quickstart Command",
-      "placeholder": "C:\\path\\to\\TraeAPI\\start-traeapi.cmd or /Users/you/TraeAPI/start-traeapi.command"
+      "placeholder": "\"C:\\path\\to\\TraeAPI\\start-traeapi.cmd\" or \"/Users/you/TraeAPI/start-traeapi.command\""
     },
     "quickstartCwd": {
       "label": "Quickstart Working Directory",

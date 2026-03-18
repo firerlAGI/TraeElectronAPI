@@ -1,8 +1,38 @@
 {
-  "name": "trae-ide",
-  "version": "0.1.0",
-  "private": true,
+  "name": "traeelectronapi",
+  "version": "0.2.0",
   "description": "OpenClaw plugin that delegates IDE tasks to a local TraeAPI instance.",
+  "main": "index.js",
+  "homepage": "https://github.com/firerlAGI/TraeElectronAPI/tree/main/integrations/openclaw-trae-plugin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/firerlAGI/TraeElectronAPI.git",
+    "directory": "integrations/openclaw-trae-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/firerlAGI/TraeElectronAPI/issues"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "trae",
+    "ide",
+    "automation"
+  ],
+  "files": [
+    "index.js",
+    "lib/traeapi-client.js",
+    "openclaw.plugin.json",
+    "README.md",
+    "README.en.md",
+    "runtime"
+  ],
+  "scripts": {
+    "sync:runtime": "node ../../scripts/sync-openclaw-plugin-runtime.js",
+    "prepack": "npm run sync:runtime",
+    "test": "node index.test.js && node lib/traeapi-client.test.js",
+    "pack:check": "npm pack --dry-run"
+  },
   "engines": {
     "node": ">=22"
   },

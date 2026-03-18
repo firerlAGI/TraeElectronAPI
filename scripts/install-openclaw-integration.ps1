@@ -15,6 +15,12 @@ function Write-Step {
   Write-Host "[TraeAPI] $Message"
 }
 
+function Quote-ShellPath {
+  param([string]$Value)
+
+  return '"' + ($Value -replace '"', '\"') + '"'
+}
+
 function Invoke-OpenClaw {
   param(
     [Parameter(Mandatory = $true)]
@@ -150,6 +156,7 @@ function Update-ToolPolicy {
 $resolvedRepoRoot = (Resolve-Path $RepoRoot).Path
 $pluginDir = Join-Path $resolvedRepoRoot "integrations\openclaw-trae-plugin"
 $quickstartCommand = Join-Path $resolvedRepoRoot "start-traeapi.cmd"
+$quickstartCommandConfig = ""
 
 if (-not (Test-Path $pluginDir)) {
   throw "Plugin directory not found: $pluginDir"
@@ -158,6 +165,7 @@ if (-not (Test-Path $pluginDir)) {
 if (-not (Test-Path $quickstartCommand)) {
   throw "TraeAPI launcher not found: $quickstartCommand"
 }
+$quickstartCommandConfig = Quote-ShellPath $quickstartCommand
 
 Write-Step "Checking whether the plugin is already installed."
 $pluginInfo = Invoke-OpenClaw -Arguments @("plugins", "info", "trae-ide") -IgnoreError -Capture
@@ -174,10 +182,10 @@ Set-ConfigValue -Path "plugins.entries.trae-ide.enabled" -Value "true" -StrictJs
 Set-ConfigValue -Path "plugins.entries.trae-ide.config.baseUrl" -Value $BaseUrl
 $autoStartValue = if ($AutoStart.IsPresent) { "true" } else { "false" }
 Set-ConfigValue -Path "plugins.entries.trae-ide.config.autoStart" -Value $autoStartValue -StrictJson
-Set-ConfigValue -Path "plugins.entries.trae-ide.config.quickstartCommand" -Value $quickstartCommand
+Set-ConfigValue -Path "plugins.entries.trae-ide.config.quickstartCommand" -Value $quickstartCommandConfig
 Set-ConfigValue -Path "plugins.entries.trae-ide.config.quickstartCwd" -Value $resolvedRepoRoot
 
-$toolIds = @("trae-ide", "trae_status", "trae_delegate")
+$toolIds = @("trae-ide", "trae_status", "trae_new_chat", "trae_delegate")
 $rootPolicyMode = Update-ToolPolicy -AllowPath "tools.allow" -AlsoAllowPath "tools.alsoAllow" -ToolIds $toolIds
 Write-Step "Updated root tool policy via tools.$rootPolicyMode."
 
@@ -198,7 +206,7 @@ if ($agentsRaw) {
     $mode = Update-ToolPolicy `
       -AllowPath "agents.list[$i].tools.allow" `
       -AlsoAllowPath "agents.list[$i].tools.alsoAllow" `
-      -ToolIds @("trae_status", "trae_delegate")
+      -ToolIds @("trae_status", "trae_new_chat", "trae_delegate")
     Write-Step "Updated agent[$i] tool policy via $mode."
   }
 }
@@ -213,7 +221,7 @@ Write-Host "TraeAPI + OpenClaw integration install completed."
 Write-Host "- Repo root: $resolvedRepoRoot"
 Write-Host "- Plugin id: trae-ide"
 Write-Host "- Base URL: $BaseUrl"
-Write-Host "- Quickstart: $quickstartCommand"
+Write-Host "- Quickstart: $quickstartCommandConfig"
 Write-Host "- Next step: restart OpenClaw Gateway"
 Write-Host "- Verify: openclaw plugins info trae-ide"
 Write-Host "- Verify after restart: ask OpenClaw to use trae_status"

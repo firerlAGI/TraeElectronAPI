@@ -158,6 +158,10 @@ function buildOpenApiDocument(options = {}) {
             metadata: {
               type: "object",
               additionalProperties: true
+            },
+            prepare: {
+              type: "boolean",
+              description: "When true, the gateway immediately switches Trae into a fresh conversation for this session."
             }
           }
         },
@@ -440,7 +444,8 @@ function buildOpenApiDocument(options = {}) {
         post: {
           tags: ["sessions"],
           summary: "Create a logical gateway session",
-          description: "Creates an in-memory session used to associate later message requests.",
+          description:
+            "Creates an in-memory session used to associate later message requests. When prepare is true, the gateway also clicks Trae's new chat action immediately.",
           parameters: [
             { $ref: "#/components/parameters/RequestIdHeader" },
             { $ref: "#/components/parameters/IdempotencyKeyHeader" }
@@ -468,9 +473,19 @@ function buildOpenApiDocument(options = {}) {
                         type: "object",
                         additionalProperties: false,
                         properties: {
-                          session: { $ref: "#/components/schemas/Session" }
+                          session: { $ref: "#/components/schemas/Session" },
+                          prepared: { type: "boolean" },
+                          preparation: {
+                            oneOf: [
+                              { type: "null" },
+                              {
+                                type: "object",
+                                additionalProperties: true
+                              }
+                            ]
+                          }
                         },
-                        required: ["session"]
+                        required: ["session", "prepared"]
                       },
                       meta: { $ref: "#/components/schemas/ApiMeta" }
                     },

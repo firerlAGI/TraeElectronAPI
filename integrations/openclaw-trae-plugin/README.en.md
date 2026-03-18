@@ -10,10 +10,56 @@ Target flow:
 
 This is not a model-provider integration. OpenClaw keeps using its own LLM. The plugin only delegates IDE work to Trae.
 
+## Install For Ongoing Updates
+
+If you want users to receive future plugin updates through OpenClaw, install the npm distribution:
+
+```bash
+openclaw plugins install traeelectronapi
+openclaw plugins enable trae-ide
+```
+
+After a new version is published, users can update with:
+
+```bash
+openclaw plugins update trae-ide
+```
+
+Important:
+
+- the npm package now bundles the full TraeAPI runtime
+- when users run `openclaw plugins update trae-ide`, the plugin and gateway capabilities update together
+- with `autoStart` enabled, the plugin can launch the bundled quickstart entry point without a separate local checkout
+
 ## Exposed Tools
 
 - `trae_status`
+- `trae_new_chat`
 - `trae_delegate`
+
+## Slash Command
+
+- `/Trae <task>`
+- `/Trae process <task>`
+
+Type `/Trae` directly in the OpenClaw chat box. The plugin will:
+
+1. Ensure TraeAPI is running
+2. Create a fresh Trae chat
+3. Delegate the task text after `/Trae` directly to Trae
+4. Return only Trae's final reply by default
+
+Use `/Trae process <task>` when you also want the process trace.
+
+Example:
+
+```text
+/Trae Analyze this repository and implement the missing login error state.
+```
+
+```text
+/Trae process Analyze this repository and return the execution trace too.
+```
 
 ## Recommended Setup
 
@@ -23,7 +69,7 @@ This is not a model-provider integration. OpenClaw keeps using its own LLM. The 
 2. Load this plugin from a local path in OpenClaw.
 3. Add the plugin tools through `tools.alsoAllow`.
 4. Restart OpenClaw Gateway.
-5. Ask OpenClaw to use `trae_status` or `trae_delegate`.
+5. Ask OpenClaw to use `trae_status`, `trae_new_chat`, or `trae_delegate`.
 
 If `autoStart` is enabled, the plugin can launch the bundled quickstart entry point automatically. On macOS that means `start-traeapi.command` when the repository is available locally.
 

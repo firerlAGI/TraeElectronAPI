@@ -61,7 +61,7 @@ curl http://127.0.0.1:8787/ready
         "config": {
           "baseUrl": "http://127.0.0.1:8787",
           "autoStart": true,
-          "quickstartCommand": "/path/to/TraeAPI/start-traeapi.command",
+          "quickstartCommand": "\"/path/to/TraeAPI/start-traeapi.command\"",
           "quickstartCwd": "/path/to/TraeAPI"
         }
       }
@@ -70,7 +70,7 @@ curl http://127.0.0.1:8787/ready
 }
 ```
 
-Windows 用户可以继续使用 `C:\path\to\TraeAPI\start-traeapi.cmd` 作为 `quickstartCommand`。
+Windows 用户可以继续使用 `"C:\path\to\TraeAPI\start-traeapi.cmd"` 作为 `quickstartCommand`。如果路径里可能有空格，保留外层引号。
 
 如果 TraeAPI 开启了 `TRAE_GATEWAY_TOKEN`，再加上：
 
@@ -94,6 +94,70 @@ Windows 用户可以继续使用 `C:\path\to\TraeAPI\start-traeapi.cmd` 作为 `
 - [macOS 示例](../integrations/openclaw-trae-plugin/examples/openclaw.config.macos.example.json)
 - [最小示例](../integrations/openclaw-trae-plugin/examples/openclaw.minimal.config.json)
 
+## 2.1 npm 发布版安装
+
+如果你希望用户后续通过 OpenClaw 直接收插件更新，可以改用 npm 安装：
+
+```bash
+openclaw plugins install traeelectronapi
+openclaw plugins enable trae-ide
+```
+
+然后至少补上这些配置：
+
+```bash
+openclaw config set plugins.entries.trae-ide.enabled true --strict-json
+openclaw config set plugins.entries.trae-ide.config.baseUrl "http://127.0.0.1:8787"
+openclaw config set plugins.entries.trae-ide.config.autoStart true --strict-json
+openclaw config validate
+```
+
+后续用户更新：
+
+```bash
+openclaw plugins update trae-ide
+```
+
+注意：
+
+- npm 包内已经自带完整 TraeAPI runtime
+- 用户执行 `openclaw plugins update trae-ide` 时，插件和网关能力会一起更新
+- 如果你显式配置了 `quickstartCommand`，会覆盖包内默认 runtime 启动入口
+
+## 2.2 开发期热更新目录
+
+如果你在开发插件，不建议让 OpenClaw 直接加载开发目录：
+
+- 不要直接指向 `integrations/openclaw-trae-plugin`
+
+推荐做法是先生成一个独立的本地热更新目录：
+
+```bash
+npm run dev:plugin-hot
+```
+
+持续开发时用：
+
+```bash
+npm run dev:plugin-hot:watch
+```
+
+脚本会生成：
+
+- 热更新插件目录：`.runtime/openclaw-plugin-hot/trae-ide`
+- OpenClaw 开发配置模板：`.runtime/openclaw-plugin-hot/openclaw.dev.config.json`
+
+这样可以明确区分：
+
+- 开发目录：`integrations/openclaw-trae-plugin`
+- OpenClaw 实际加载目录：`.runtime/openclaw-plugin-hot/trae-ide`
+
+注意：
+
+- OpenClaw 应该加载热更新目录，不要直接加载开发目录
+- `quickstartCommand` 和 `quickstartCwd` 仍然应该指向开发仓库根目录
+- 如果 OpenClaw 宿主没有自动重载插件代码，改完后仍需重启 OpenClaw Gateway
+
 ## 3. 正确启用工具
 
 请用 `alsoAllow`，不要只写插件专用的 `allow`。
@@ -110,7 +174,7 @@ Windows 用户可以继续使用 `C:\path\to\TraeAPI\start-traeapi.cmd` 作为 `
       {
         "id": "main",
         "tools": {
-          "alsoAllow": ["trae_status", "trae_delegate"]
+          "alsoAllow": ["trae_status", "trae_new_chat", "trae_delegate"]
         }
       }
     ]
@@ -136,12 +200,27 @@ openclaw plugins info trae-ide
 正常结果里应该有：
 
 - 插件状态 `loaded`
-- 工具 `trae_status, trae_delegate`
+- 工具 `trae_status, trae_new_chat, trae_delegate`
 
 然后再让 OpenClaw 进行显式调用：
 
 - `Use trae_status exactly once and tell me whether Trae is ready.`
 - `Use trae_delegate exactly once and ask Trae to summarize this project.`
+
+你也可以在 OpenClaw 对话框里直接输入：
+
+- `/Trae 分析当前仓库，并实现缺失的登录错误提示`
+- `/Trae process 分析当前仓库，并把执行过程也一起返回`
+
+插件会自动：
+
+- 启动或唤起 TraeAPI
+- 新建一个 Trae 对话
+- 把 `/Trae` 后面的任务直接交给 Trae
+
+默认情况下，OpenClaw 只会看到 Trae 的最终回复。
+
+只有在使用 `/Trae process ...` 时，插件才会把过程信息一起回传。
 
 ## 5. 排障
 

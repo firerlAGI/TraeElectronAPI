@@ -1,11 +1,17 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const http = require("node:http");
+const os = require("node:os");
+const path = require("node:path");
 const {
   TraeApiClient,
   formatDelegateToolResult,
+  formatNewChatToolResult,
   formatStatusToolResult,
   getBundledQuickstartDefaults,
+  resolveReplyText,
+  resolveBundledRuntimeRoot,
   resolvePluginRuntimeConfig,
   stripDuplicateFinalText
 } = require("./traeapi-client");
@@ -64,9 +70,62 @@ test("formatters produce readable summaries", () => {
       }
     }
   });
-  assert.equal(delegateText.includes("Final reply"), true);
-  assert.equal(delegateText.includes("step 1"), true);
-  assert.equal(delegateText.includes("1. final answer"), false);
+  assert.equal(delegateText, "final answer");
+
+  const verboseDelegateText = formatDelegateToolResult(
+    {
+      data: {
+        sessionId: "s1",
+        requestId: "r1",
+        sessionCreated: true,
+        result: {
+          response: {
+            text: "final answer"
+          },
+          chunks: ["step 1", "final answer"]
+        }
+      }
+    },
+    {
+      includeProcessText: true
+    }
+  );
+  assert.equal(verboseDelegateText.includes("Final reply"), true);
+  assert.equal(verboseDelegateText.includes("step 1"), true);
+  assert.equal(verboseDelegateText.includes("1. final answer"), false);
+
+  const newChatText = formatNewChatToolResult({
+    data: {
+      session: {
+        sessionId: "session-new"
+      },
+      prepared: true,
+      preparation: {
+        requestId: "prepare-1",
+        preparation: {
+          trigger: "new_chat"
+        }
+      }
+    }
+  });
+  assert.equal(newChatText.includes("New Trae chat created."), true);
+  assert.equal(newChatText.includes("Session ID: session-new"), true);
+});
+
+test("resolveReplyText falls back to the last chunk when response text is empty", () => {
+  assert.equal(
+    resolveReplyText({
+      data: {
+        result: {
+          response: {
+            text: ""
+          },
+          chunks: ["step 1", "delegate ok"]
+        }
+      }
+    }),
+    "delegate ok"
+  );
 });
 
 test("TraeApiClient delegates tasks through /v1/chat", async () => {
@@ -149,4 +208,29 @@ test("getBundledQuickstartDefaults picks the macOS launcher when available", () 
   });
 
   assert.equal(defaults.quickstartCommand.includes("start-traeapi.command"), true);
+});
+
+test("getBundledQuickstartDefaults prefers the bundled runtime when present", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "trae-plugin-runtime-"));
+  const packageRoot = path.join(tempRoot, "plugin");
+  const bundledRuntimeRoot = path.join(packageRoot, "runtime", "traeapi");
+  fs.mkdirSync(path.join(bundledRuntimeRoot, "scripts"), { recursive: true });
+  fs.writeFileSync(path.join(bundledRuntimeRoot, "scripts", "quickstart.js"), "console.log('ok');\n", "utf8");
+  fs.writeFileSync(path.join(bundledRuntimeRoot, "start-traeapi.command"), "#!/bin/bash\n", "utf8");
+
+  try {
+    assert.equal(resolveBundledRuntimeRoot({ packageRoot }), bundledRuntimeRoot);
+    const defaults = getBundledQuickstartDefaults({
+      packageRoot,
+      platform: "darwin",
+      execPath: "/usr/local/bin/node"
+    });
+    assert.equal(defaults.quickstartCommand, `"${path.join(bundledRuntimeRoot, "start-traeapi.command")}"`);
+    assert.equal(defaults.quickstartCwd, bundledRuntimeRoot);
+  } finally {
+    fs.rmSync(tempRoot, {
+      recursive: true,
+      force: true
+    });
+  }
 });

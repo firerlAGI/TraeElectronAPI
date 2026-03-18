@@ -41,10 +41,34 @@ function quoteShellPath(value) {
   return `"${String(value || "").replaceAll("\\\"", "\\\\\\\"")}"`;
 }
 
+function resolveBundledRuntimeRoot(options = {}) {
+  const packageRoot = path.resolve(options.packageRoot || path.join(__dirname, ".."));
+  const bundledRuntimeRoot = path.join(packageRoot, "runtime", "traeapi");
+  if (fs.existsSync(path.join(bundledRuntimeRoot, "scripts", "quickstart.js"))) {
+    return bundledRuntimeRoot;
+  }
+
+  const sourceRepoRoot = path.resolve(packageRoot, "..", "..");
+  if (
+    fs.existsSync(path.join(sourceRepoRoot, "scripts", "quickstart.js")) &&
+    fs.existsSync(path.join(sourceRepoRoot, "integrations", "openclaw-trae-plugin", "index.js"))
+  ) {
+    return sourceRepoRoot;
+  }
+
+  return "";
+}
+
 function getBundledQuickstartDefaults(options = {}) {
-  const repoRoot = path.resolve(__dirname, "..", "..", "..");
+  const repoRoot = resolveBundledRuntimeRoot(options);
   const platform = options.platform || process.platform;
   const nodeExecPath = options.execPath || process.execPath;
+  if (!repoRoot) {
+    return {
+      quickstartCommand: "",
+      quickstartCwd: ""
+    };
+  }
   const windowsLauncher = path.join(repoRoot, "start-traeapi.cmd");
   const macLauncher = path.join(repoRoot, "start-traeapi.command");
   const posixLauncher = path.join(repoRoot, "start-traeapi.sh");
@@ -197,10 +221,46 @@ function formatStatusToolResult(status) {
   return lines.join("\n");
 }
 
-function formatDelegateToolResult(result) {
+function formatNewChatToolResult(result) {
   const data = result?.data || {};
-  const finalText = String(data?.result?.response?.text || "").trim();
-  const processItems = stripDuplicateFinalText(normalizeChunks(result), finalText);
+  const session = data.session || {};
+  const preparation = data.preparation || {};
+  const lines = [
+    "New Trae chat created.",
+    `Session ID: ${session.sessionId || "unknown"}`,
+    `Prepared in Trae: ${data.prepared === true ? "yes" : "no"}`
+  ];
+
+  if (preparation.requestId) {
+    lines.push(`Request ID: ${preparation.requestId}`);
+  }
+  if (preparation.preparation?.trigger) {
+    lines.push(`Trigger: ${preparation.preparation.trigger}`);
+  }
+
+  return lines.join("\n");
+}
+
+function resolveReplyText(result) {
+  const responseText = String(result?.data?.result?.response?.text || "").trim();
+  if (responseText) {
+    return responseText;
+  }
+
+  const chunks = normalizeChunks(result);
+  return chunks.length > 0 ? chunks[chunks.length - 1] : "";
+}
+
+function formatDelegateToolResult(result, options = {}) {
+  const data = result?.data || {};
+  const includeProcessText = options.includeProcessText === true;
+  const replyText = resolveReplyText(result);
+  const processItems = stripDuplicateFinalText(normalizeChunks(result), replyText);
+
+  if (!includeProcessText) {
+    return replyText || "Trae task completed.";
+  }
+
   const sections = [
     "Trae task completed.",
     `Session ID: ${data.sessionId || "unknown"}`,
@@ -208,8 +268,8 @@ function formatDelegateToolResult(result) {
     `Session created: ${data.sessionCreated === true ? "yes" : "no"}`
   ];
 
-  if (finalText) {
-    sections.push(`Final reply\n${finalText}`);
+  if (replyText) {
+    sections.push(`Final reply\n${replyText}`);
   }
 
   const processSection = formatListSection("Process text", processItems);
@@ -350,6 +410,48 @@ class TraeApiClient {
     };
   }
 
+  async createSession({ metadata = {}, prepare = false, allowAutoStart = false } = {}) {
+    if (prepare) {
+      const readiness = await this.ensureReady({ allowAutoStart });
+      if (!readiness.ready) {
+        const errorMessage =
+          readiness.readyResponse?.json?.message ||
+          readiness.readyResponse?.json?.details?.message ||
+          readiness.readyResponse?.error?.message ||
+          `TraeAPI at ${this.config.baseUrl} is not ready`;
+        throw new Error(errorMessage);
+      }
+    }
+
+    const response = await this.request("/v1/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: {
+        metadata,
+        prepare
+      }
+    });
+
+    if (!response.ok || !response.json?.success) {
+      throw new Error(response.json?.message || `TraeAPI request failed with status ${response.status}`);
+    }
+
+    return response.json;
+  }
+
+  async createNewChat({ allowAutoStart = true } = {}) {
+    return this.createSession({
+      metadata: {
+        client: "openclaw-trae-plugin",
+        action: "trae_new_chat"
+      },
+      prepare: true,
+      allowAutoStart
+    });
+  }
+
   async delegateTask({ task, sessionId, allowAutoStart = true }) {
     if (typeof task !== "string" || !task.trim()) {
       throw new Error("trae_delegate requires a non-empty task string");
@@ -402,8 +504,11 @@ module.exports = {
   TraeApiClient,
   createTraeApiClient,
   formatDelegateToolResult,
+  formatNewChatToolResult,
   formatStatusToolResult,
   getBundledQuickstartDefaults,
+  resolveReplyText,
+  resolveBundledRuntimeRoot,
   resolvePluginRuntimeConfig,
   stripDuplicateFinalText
 };

@@ -584,6 +584,70 @@ function createTraeAutomationDriver(options = {}) {
     ready: false
   };
 
+  async function prepareConversationSession(session, discovery, requestId, channel, sessionId = null) {
+    const beforePrepareSnapshot = await domAdapter.captureResponseSnapshot(session, config);
+    const beforePrepareActivitySnapshot =
+      config.activitySelectors.length > 0
+        ? await domAdapter.captureResponseSnapshot(session, config, {
+            selectors: config.activitySelectors,
+            allowHiddenText: true
+          })
+        : [];
+    const preparation = await domAdapter.prepareSession(session, config, {
+      sessionId
+    });
+    if (!preparation || !preparation.clicked) {
+      throw new TraeAutomationError("AUTOMATION_NEW_CHAT_FAILED", "Failed to switch Trae into a fresh conversation", {
+        preparation: preparation || {}
+      });
+    }
+
+    if (sessionId) {
+      preparedSessions.add(sessionId);
+    }
+
+    if (config.postActionDelayMs > 0) {
+      await sleep(config.postActionDelayMs);
+    }
+
+    let baselineSnapshot = null;
+    let baselineActivitySnapshot = null;
+    if (hasSnapshotContent(beforePrepareSnapshot) || hasSnapshotContent(beforePrepareActivitySnapshot)) {
+      try {
+        const preparedBaseline = await waitForPreparedSession({
+          domAdapter,
+          session,
+          config,
+          beforeResponseSnapshot: beforePrepareSnapshot,
+          beforeActivitySnapshot: beforePrepareActivitySnapshot,
+          now
+        });
+        baselineSnapshot = preparedBaseline.responseSnapshot;
+        baselineActivitySnapshot = preparedBaseline.activitySnapshot;
+      } catch (error) {
+        if (!(error instanceof TraeAutomationError) || error.code !== "AUTOMATION_NEW_CHAT_TIMEOUT") {
+          throw error;
+        }
+      }
+    }
+
+    return {
+      status: "ok",
+      requestId,
+      channel,
+      prepared: true,
+      sessionId,
+      preparation,
+      baselineSnapshot,
+      baselineActivitySnapshot,
+      target: {
+        id: discovery.target.id,
+        title: discovery.target.title,
+        url: discovery.target.url
+      }
+    };
+  }
+
   async function inspectReadyState() {
     const inspected = await inspectAutomationTarget({
       config,
@@ -624,42 +688,15 @@ function createTraeAutomationDriver(options = {}) {
       let baselineSnapshot = null;
       let baselineActivitySnapshot = null;
       if (sessionId && config.newChatSelectors.length > 0 && !preparedSessions.has(sessionId)) {
-        const beforePrepareSnapshot = await domAdapter.captureResponseSnapshot(session, config);
-        const beforePrepareActivitySnapshot =
-          config.activitySelectors.length > 0
-            ? await domAdapter.captureResponseSnapshot(session, config, {
-                selectors: config.activitySelectors,
-                allowHiddenText: true
-              })
-            : [];
-        const preparation = await domAdapter.prepareSession(session, config, payload.body);
-        if (!preparation || !preparation.clicked) {
-          throw new TraeAutomationError("AUTOMATION_NEW_CHAT_FAILED", "Failed to switch Trae into a fresh conversation", {
-            preparation: preparation || {}
-          });
-        }
-        preparedSessions.add(sessionId);
-        if (config.postActionDelayMs > 0) {
-          await sleep(config.postActionDelayMs);
-        }
-        if (hasSnapshotContent(beforePrepareSnapshot) || hasSnapshotContent(beforePrepareActivitySnapshot)) {
-          try {
-            const preparedBaseline = await waitForPreparedSession({
-              domAdapter,
-              session,
-              config,
-              beforeResponseSnapshot: beforePrepareSnapshot,
-              beforeActivitySnapshot: beforePrepareActivitySnapshot,
-              now
-            });
-            baselineSnapshot = preparedBaseline.responseSnapshot;
-            baselineActivitySnapshot = preparedBaseline.activitySnapshot;
-          } catch (error) {
-            if (!(error instanceof TraeAutomationError) || error.code !== "AUTOMATION_NEW_CHAT_TIMEOUT") {
-              throw error;
-            }
-          }
-        }
+        const preparation = await prepareConversationSession(
+          session,
+          discovery,
+          requestId,
+          payload.channel || "trae:conversation:send",
+          sessionId
+        );
+        baselineSnapshot = preparation.baselineSnapshot;
+        baselineActivitySnapshot = preparation.baselineActivitySnapshot;
       }
 
       if (!baselineSnapshot) {
@@ -756,6 +793,44 @@ function createTraeAutomationDriver(options = {}) {
         requestId,
         response: enqueueOperation(() => runAutomationRequest(requestId, payload))
       };
+    },
+    prepareSession(payload = {}) {
+      const requestId = payload.requestId || randomUUID();
+      return enqueueOperation(async () => {
+        const startedAt = new Date().toISOString();
+        let session = null;
+        try {
+          const discovery = await discoverTarget(config.discovery);
+          session = await connectToTarget(discovery.target, config);
+          const readiness = await domAdapter.inspectReadiness(session, config);
+          if (!readiness || !readiness.ready) {
+            throw new TraeAutomationError("AUTOMATION_SELECTOR_NOT_READY", "The Trae window is missing the configured selectors", {
+              readiness
+            });
+          }
+
+          const prepared = await prepareConversationSession(
+            session,
+            discovery,
+            requestId,
+            payload.channel || "trae:session:prepare",
+            payload.sessionId || null
+          );
+          const { baselineSnapshot: _baselineSnapshot, baselineActivitySnapshot: _baselineActivitySnapshot, ...preparedResult } = prepared;
+
+          return {
+            ...preparedResult,
+            startedAt,
+            finishedAt: new Date().toISOString()
+          };
+        } catch (error) {
+          throw normalizeAutomationError(error, "AUTOMATION_PREPARE_FAILED", "Trae automation prepare session failed");
+        } finally {
+          if (session) {
+            await session.close().catch(() => {});
+          }
+        }
+      });
     },
     getSnapshot() {
       return {

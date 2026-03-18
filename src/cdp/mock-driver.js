@@ -4,6 +4,7 @@ const { normalizeAutomationError } = require("./errors");
 function createMockAutomationDriver(options = {}) {
   const latencyMs = Number(options.latencyMs || process.env.TRAE_MOCK_LATENCY_MS || 80);
   const mode = String(options.mode || "mock");
+  const preparedSessions = [];
 
   return {
     async getReadiness() {
@@ -64,6 +65,31 @@ function createMockAutomationDriver(options = {}) {
     },
     normalizeError(error, fallbackCode = "AUTOMATION_ERROR") {
       return normalizeAutomationError(error, fallbackCode);
+    },
+    async prepareSession(payload = {}) {
+      const requestId = payload.requestId || randomUUID();
+      const sessionId = payload.sessionId || null;
+      if (sessionId) {
+        preparedSessions.push(sessionId);
+      }
+      return {
+        status: "ok",
+        requestId,
+        channel: payload.channel || "trae:session:prepare",
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        prepared: true,
+        sessionId,
+        preparation: {
+          clicked: true,
+          trigger: "new_chat"
+        },
+        target: {
+          id: "mock-target",
+          title: "Mock Trae Window",
+          url: "mock://trae"
+        }
+      };
     },
     dispatchRequest(payload = {}) {
       const requestId = payload.requestId || randomUUID();
@@ -136,7 +162,8 @@ function createMockAutomationDriver(options = {}) {
     getSnapshot() {
       return {
         mode,
-        latencyMs
+        latencyMs,
+        preparedSessions
       };
     }
   };
