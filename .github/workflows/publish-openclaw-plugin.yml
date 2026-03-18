@@ -13,11 +13,13 @@ on:
           - beta
           - next
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -25,7 +27,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.14.0
           registry-url: https://registry.npmjs.org
 
       - name: Verify plugin release metadata
@@ -40,5 +42,3 @@ jobs:
       - name: Publish plugin to npm
         working-directory: integrations/openclaw-trae-plugin
         run: npm publish --tag "${{ inputs.npm_tag }}"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
