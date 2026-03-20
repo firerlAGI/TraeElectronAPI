@@ -1,6 +1,6 @@
 {
   "name": "traeclaw",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "description": "Local HTTP bridge and OpenClaw tool integration for Trae powered by CDP and DOM automation.",
   "homepage": "https://github.com/firerlAGI/TraeClaw",
@@ -11,6 +11,7 @@
   "bugs": {
     "url": "https://github.com/firerlAGI/TraeClaw/issues"
   },
+  "license": "MIT",
   "keywords": [
     "trae",
     "electron",

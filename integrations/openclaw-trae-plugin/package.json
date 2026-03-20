@@ -12,6 +12,7 @@
   "bugs": {
     "url": "https://github.com/firerlAGI/TraeClaw/issues"
   },
+  "license": "MIT",
   "keywords": [
     "openclaw",
     "plugin",

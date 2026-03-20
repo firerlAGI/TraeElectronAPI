@@ -1,8 +1,12 @@
 # TraeClaw
 
+![Preview](https://img.shields.io/badge/status-preview-orange)
+
 [Chinese Home](README.md) | [Chinese Mirror](README.zh-CN.md)
 
 TraeClaw is a local bridge that lets OpenClaw use the Trae desktop app as an IDE tool.
+
+The GitHub homepage currently tracks a preview release channel. Interfaces, install paths, and compatibility details may still change.
 
 Target flow:
 
@@ -10,6 +14,7 @@ Target flow:
 
 ## Current Status
 
+- Repository releases are currently managed as preview builds
 - The current priority target is the Trae international edition
 - Support for the Trae China plugin is still under development
 - macOS is the recommended stable deployment platform today
@@ -111,3 +116,7 @@ If the repository is not local yet:
 - [FAQ](docs/faq.md)
 - [Changelog](CHANGELOG.md)
 - [Security Policy](SECURITY.md)
+
+## License
+
+This repository is licensed under the [MIT License](LICENSE).
