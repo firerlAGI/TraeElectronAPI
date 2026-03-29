@@ -14,7 +14,7 @@ test("syncHotPluginDirectory creates an isolated hot plugin mirror and config", 
   const sourcePluginDir = path.join(rootDir, "integrations", "openclaw-trae-plugin");
   fs.mkdirSync(sourcePluginDir, { recursive: true });
   fs.writeFileSync(path.join(sourcePluginDir, "index.js"), "module.exports = {};\n", "utf8");
-  fs.writeFileSync(path.join(sourcePluginDir, "openclaw.plugin.json"), "{\"id\":\"trae-ide\"}\n", "utf8");
+  fs.writeFileSync(path.join(sourcePluginDir, "openclaw.plugin.json"), "{\"id\":\"traeclaw\"}\n", "utf8");
   fs.writeFileSync(path.join(rootDir, "start-traeapi.command"), "#!/bin/bash\n", "utf8");
   fs.writeFileSync(path.join(rootDir, "start-traeapi.cmd"), "@echo off\r\n", "utf8");
 
@@ -29,9 +29,9 @@ test("syncHotPluginDirectory creates an isolated hot plugin mirror and config", 
 
   const generatedConfig = JSON.parse(fs.readFileSync(layout.generatedConfigPath, "utf8"));
   assert.equal(generatedConfig.plugins.load.paths[0], summary.hotPluginDir);
-  assert.equal(generatedConfig.plugins.entries["trae-ide"].config.quickstartCwd, rootDir);
+  assert.equal(generatedConfig.plugins.entries["traeclaw"].config.quickstartCwd, rootDir);
   assert.equal(
-    generatedConfig.plugins.entries["trae-ide"].config.quickstartCommand,
+    generatedConfig.plugins.entries["traeclaw"].config.quickstartCommand,
     `"${path.join(rootDir, "start-traeapi.command")}"`
   );
 });
@@ -46,8 +46,8 @@ test("buildOpenClawDevConfig keeps plugin mirror and dev repo root separated", (
     platform: "darwin"
   });
 
-  assert.equal(config.plugins.load.paths[0], "/tmp/trae-dev/.runtime/openclaw-plugin-hot/trae-ide");
-  assert.equal(config.plugins.entries["trae-ide"].config.quickstartCwd, "/tmp/trae-dev");
-  assert.equal(config.plugins.entries["trae-ide"].config.quickstartCommand, "\"/tmp/trae-dev/start-traeapi.command\"");
+  assert.equal(config.plugins.load.paths[0], "/tmp/trae-dev/.runtime/openclaw-plugin-hot/traeclaw");
+  assert.equal(config.plugins.entries["traeclaw"].config.quickstartCwd, "/tmp/trae-dev");
+  assert.equal(config.plugins.entries["traeclaw"].config.quickstartCommand, "\"/tmp/trae-dev/start-traeapi.command\"");
   assert.equal(config.agents.list[0].tools.alsoAllow.includes("trae_update_self"), true);
 });

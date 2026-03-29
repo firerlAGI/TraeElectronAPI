@@ -53,26 +53,26 @@ If you want users to receive plugin updates directly through OpenClaw later, ins
 
 ```bash
 openclaw plugins install traeclaw
-openclaw plugins enable trae-ide
+openclaw plugins enable traeclaw
 ```
 
 When a new version is published, users update with:
 
 ```bash
-openclaw plugins update trae-ide
+openclaw plugins update traeclaw
 ```
 
 Two important constraints:
 
 - the npm package now ships both the OpenClaw plugin and the full TraeClaw runtime
-- when users run `openclaw plugins update trae-ide`, the plugin and gateway capabilities update together
+- when users run `openclaw plugins update traeclaw`, the plugin and gateway capabilities update together
 
 To let the plugin auto-start the bundled runtime, also set:
 
 ```bash
-openclaw config set plugins.entries.trae-ide.enabled true --strict-json
-openclaw config set plugins.entries.trae-ide.config.autoStart true --strict-json
-openclaw config set plugins.entries.trae-ide.config.baseUrl "http://127.0.0.1:8787"
+openclaw config set plugins.entries.traeclaw.enabled true --strict-json
+openclaw config set plugins.entries.traeclaw.config.autoStart true --strict-json
+openclaw config set plugins.entries.traeclaw.config.baseUrl "http://127.0.0.1:8787"
 openclaw config validate
 ```
 

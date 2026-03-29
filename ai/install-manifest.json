@@ -4,7 +4,7 @@
   "product": "TraeClaw OpenClaw Integration",
   "repo": "https://github.com/firerlAGI/TraeClaw",
   "preferredPlatform": "cross-platform",
-  "pluginId": "trae-ide",
+  "pluginId": "traeclaw",
   "tools": [
     "trae_status",
     "trae_delegate"
@@ -23,7 +23,7 @@
     "quickstartCommandMac": "start-traeapi.command"
   },
   "verify": [
-    "openclaw plugins info trae-ide",
+    "openclaw plugins info traeclaw",
     "openclaw config validate"
   ],
   "notes": [

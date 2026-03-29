@@ -15,6 +15,9 @@ openclaw_command="openclaw"
 base_url="http://127.0.0.1:8787"
 auto_start=1
 skip_validate=0
+plugin_id="traeclaw"
+legacy_plugin_id="trae-ide"
+plugin_entry_path="plugins.entries.${plugin_id}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -127,27 +130,35 @@ update_tool_policy() {
 }
 
 write_step "Checking whether the plugin is already installed."
-plugin_info="$(capture_openclaw plugins info trae-ide || true)"
+plugin_info="$(capture_openclaw plugins info "$plugin_id" || true)"
+legacy_plugin_info="$(capture_openclaw plugins info "$legacy_plugin_id" || true)"
 if [[ -z "$plugin_info" ]]; then
+  if [[ -n "$legacy_plugin_info" ]]; then
+    write_step "Legacy plugin ${legacy_plugin_id} is installed. Disabling it before installing ${plugin_id}."
+    run_openclaw plugins disable "$legacy_plugin_id" || true
+  fi
   write_step "Installing the OpenClaw plugin from the local repository."
   run_openclaw plugins install --link "$plugin_dir"
 else
-  write_step "Plugin trae-ide is already installed. Reusing the existing install."
+  write_step "Plugin ${plugin_id} is already installed. Reusing the existing install."
 fi
 
 write_step "Enabling the plugin."
-run_openclaw plugins enable trae-ide || true
-set_config_value "plugins.entries.trae-ide.enabled" "true" 1
-set_config_value "plugins.entries.trae-ide.config.baseUrl" "$base_url"
-if [[ "$auto_start" == "1" ]]; then
-  set_config_value "plugins.entries.trae-ide.config.autoStart" "true" 1
-else
-  set_config_value "plugins.entries.trae-ide.config.autoStart" "false" 1
+run_openclaw plugins enable "$plugin_id" || true
+if [[ -n "$legacy_plugin_info" ]]; then
+  run_openclaw plugins disable "$legacy_plugin_id" || true
 fi
-set_config_value "plugins.entries.trae-ide.config.quickstartCommand" "$quickstart_command_config"
-set_config_value "plugins.entries.trae-ide.config.quickstartCwd" "$resolved_repo_root"
+set_config_value "${plugin_entry_path}.enabled" "true" 1
+set_config_value "${plugin_entry_path}.config.baseUrl" "$base_url"
+if [[ "$auto_start" == "1" ]]; then
+  set_config_value "${plugin_entry_path}.config.autoStart" "true" 1
+else
+  set_config_value "${plugin_entry_path}.config.autoStart" "false" 1
+fi
+set_config_value "${plugin_entry_path}.config.quickstartCommand" "$quickstart_command_config"
+set_config_value "${plugin_entry_path}.config.quickstartCwd" "$resolved_repo_root"
 
-tool_json='["trae-ide","trae_status","trae_update_self","trae_new_chat","trae_open_project","trae_switch_mode","trae_delegate"]'
+tool_json='["traeclaw","trae-ide","trae_status","trae_update_self","trae_new_chat","trae_open_project","trae_switch_mode","trae_delegate"]'
 root_policy_mode="$(update_tool_policy "tools.allow" "tools.alsoAllow" "$tool_json")"
 write_step "Updated root tool policy via tools.${root_policy_mode}."
 
@@ -168,10 +179,10 @@ fi
 printf '\n'
 printf 'TraeClaw + OpenClaw integration install completed.\n'
 printf -- '- Repo root: %s\n' "$resolved_repo_root"
-printf -- '- Plugin id: trae-ide\n'
+printf -- '- Plugin id: %s\n' "$plugin_id"
 printf -- '- Base URL: %s\n' "$base_url"
 printf -- '- Quickstart: %s\n' "$quickstart_command_config"
 printf -- '- Next step: restart OpenClaw Gateway\n'
-printf -- '- Verify: openclaw plugins info trae-ide\n'
+printf -- '- Verify: openclaw plugins info %s\n' "$plugin_id"
 printf -- '- Verify after restart: ask OpenClaw to use trae_status\n'
 printf '\n'

@@ -9,7 +9,7 @@ test("plugin registers status, self-update, new chat, open project, mode switch,
     config: {
       plugins: {
         entries: {
-          "trae-ide": {
+          "traeclaw": {
             config: {
               baseUrl: "http://127.0.0.1:8787"
             }

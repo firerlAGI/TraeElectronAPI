@@ -22,7 +22,7 @@ function main() {
   assertCondition(typeof packageJson.name === "string" && packageJson.name.trim(), "Plugin package.json must define a package name.");
   assertCondition(packageJson.private !== true, "Plugin package.json must not remain private for npm publishing.");
   assertCondition(packageJson.version === pluginManifest.version, "Plugin package version must match openclaw.plugin.json version.");
-  assertCondition(pluginManifest.id === "trae-ide", "OpenClaw plugin id must remain trae-ide.");
+  assertCondition(pluginManifest.id === "traeclaw", "OpenClaw plugin id must remain traeclaw.");
   assertCondition(Array.isArray(packageJson.openclaw?.extensions), "Plugin package.json must define openclaw.extensions.");
   assertCondition(packageJson.openclaw.extensions.includes("./index.js"), "Plugin package.json must expose ./index.js as an OpenClaw extension.");
   assertCondition(typeof packageJson.scripts?.["sync:runtime"] === "string", "Plugin package.json must define scripts.sync:runtime.");

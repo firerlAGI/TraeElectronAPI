@@ -2,7 +2,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-const PLUGIN_ID = "trae-ide";
+const PLUGIN_ID = "traeclaw";
+const LEGACY_PLUGIN_IDS = ["trae-ide"];
 const DEFAULT_BASE_URL = "http://127.0.0.1:8787";
 const DEFAULT_READY_TIMEOUT_MS = 45000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 180000;
@@ -344,10 +345,14 @@ function getBundledQuickstartDefaults(options = {}) {
 
 function readPluginConfig(api) {
   const directConfig = firstObject([api?.pluginConfig, api?.entry?.config, api?.plugin?.config]);
-  const configFromRoot = firstObject([
-    api?.config?.plugins?.entries?.[PLUGIN_ID]?.config,
-    api?.config?.plugins?.entries?.["trae-ide"]?.config
-  ]);
+  const configFromRoot = {};
+  const configuredEntries = api?.config?.plugins?.entries;
+  for (const pluginId of [...LEGACY_PLUGIN_IDS, PLUGIN_ID]) {
+    const entryConfig = configuredEntries?.[pluginId]?.config;
+    if (isPlainObject(entryConfig)) {
+      Object.assign(configFromRoot, entryConfig);
+    }
+  }
   return {
     ...configFromRoot,
     ...directConfig
@@ -782,7 +787,7 @@ class TraeApiClient {
   async startQuickstart(options = {}) {
     if (!this.config.quickstartCommand) {
       throw new Error(
-        "TraeClaw is not ready and no quickstartCommand is configured. Start TraeClaw first or configure plugins.entries.trae-ide.config.quickstartCommand."
+        "TraeClaw is not ready and no quickstartCommand is configured. Start TraeClaw first or configure plugins.entries.traeclaw.config.quickstartCommand."
       );
     }
 

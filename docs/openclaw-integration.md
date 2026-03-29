@@ -56,7 +56,7 @@ Simplest option while both projects live in local checkouts:
       ]
     },
     "entries": {
-      "trae-ide": {
+      "traeclaw": {
         "enabled": true,
         "config": {
           "baseUrl": "http://127.0.0.1:8787",
@@ -78,7 +78,7 @@ If your gateway uses a bearer token, also set:
 {
   "plugins": {
     "entries": {
-      "trae-ide": {
+      "traeclaw": {
         "config": {
           "token": "your-token"
         }
@@ -99,28 +99,28 @@ If you want users to receive plugin updates directly through OpenClaw later, ins
 
 ```bash
 openclaw plugins install traeclaw
-openclaw plugins enable trae-ide
+openclaw plugins enable traeclaw
 ```
 
 Then set at least these values:
 
 ```bash
-openclaw config set plugins.entries.trae-ide.enabled true --strict-json
-openclaw config set plugins.entries.trae-ide.config.baseUrl "http://127.0.0.1:8787"
-openclaw config set plugins.entries.trae-ide.config.autoStart true --strict-json
+openclaw config set plugins.entries.traeclaw.enabled true --strict-json
+openclaw config set plugins.entries.traeclaw.config.baseUrl "http://127.0.0.1:8787"
+openclaw config set plugins.entries.traeclaw.config.autoStart true --strict-json
 openclaw config validate
 ```
 
 Users update later with:
 
 ```bash
-openclaw plugins update trae-ide
+openclaw plugins update traeclaw
 ```
 
 Important:
 
 - the npm package now bundles the full TraeClaw runtime
-- when users run `openclaw plugins update trae-ide`, the plugin and gateway capabilities update together
+- when users run `openclaw plugins update traeclaw`, the plugin and gateway capabilities update together
 - if you explicitly configure `quickstartCommand`, it overrides the bundled runtime launcher
 
 ## 2.2 Dev Hot Plugin Directory
@@ -143,13 +143,13 @@ npm run dev:plugin-hot:watch
 
 The script generates:
 
-- hot plugin dir: `.runtime/openclaw-plugin-hot/trae-ide`
+- hot plugin dir: `.runtime/openclaw-plugin-hot/traeclaw`
 - OpenClaw dev config template: `.runtime/openclaw-plugin-hot/openclaw.dev.config.json`
 
 This keeps the roles clear:
 
 - development source dir: `integrations/openclaw-trae-plugin`
-- OpenClaw runtime load dir: `.runtime/openclaw-plugin-hot/trae-ide`
+- OpenClaw runtime load dir: `.runtime/openclaw-plugin-hot/traeclaw`
 
 Notes:
 
@@ -166,7 +166,7 @@ Recommended:
 ```json
 {
   "tools": {
-    "alsoAllow": ["trae-ide"]
+    "alsoAllow": ["traeclaw"]
   },
   "agents": {
     "list": [
@@ -193,7 +193,7 @@ After changing config, restart the OpenClaw Gateway.
 Check that OpenClaw sees the plugin:
 
 ```bash
-openclaw plugins info trae-ide
+openclaw plugins info traeclaw
 ```
 
 You should see:
@@ -225,7 +225,7 @@ The process trace is included only when you use `/Trae process ...`.
 
 `trae_status` or `trae_delegate` does not appear inside the agent
 
-- Confirm the plugin loads with `openclaw plugins info trae-ide`
+- Confirm the plugin loads with `openclaw plugins info traeclaw`
 - Replace plugin-only `tools.allow` with `tools.alsoAllow`
 - Restart the OpenClaw Gateway after config changes
 

@@ -7,13 +7,13 @@
 如果你希望用户优先走稳定发布链路，而不是本地仓库脚本，最推荐直接说：
 
 ```text
-请先阅读这个仓库里的 AGENTS.md 和 AI_INSTALL.zh-CN.md，然后在 macOS 上通过 npm 安装并启用 traeclaw（trae-ide），验证 openclaw plugins info trae-ide 和 openclaw config validate，提醒我重启 OpenClaw Gateway，再执行一次 trae_status，并告诉我接下来怎么用 trae_delegate。
+请先阅读这个仓库里的 AGENTS.md 和 AI_INSTALL.zh-CN.md，然后在 macOS 上通过 npm 安装并启用 traeclaw，验证 openclaw plugins info traeclaw 和 openclaw config validate，提醒我重启 OpenClaw Gateway，再执行一次 trae_status，并告诉我接下来怎么用 trae_delegate。
 ```
 
 这条说法适合：
 
 - 你要的是稳定安装入口
-- 你希望后续通过 `openclaw plugins update trae-ide` 更新
+- 你希望后续通过 `openclaw plugins update traeclaw` 更新
 - 你不想让用户手工处理本地仓库路径
 
 ## 本地仓库一键安装说法
@@ -33,7 +33,7 @@ bash ./scripts/install-openclaw-integration.sh
 
 不要使用 openclaw plugins install <github-url> 或 git spec。
 安装完成后请验证：
-- openclaw plugins info trae-ide
+- openclaw plugins info traeclaw
 - openclaw config validate
 
 最后请告诉我：
@@ -54,7 +54,7 @@ bash ./scripts/install-openclaw-integration.sh
 如果我是 Windows 用户，请优先执行 bootstrap-openclaw-integration.ps1。
 如果我是 macOS 用户，请优先执行 bootstrap-openclaw-integration.sh。
 
-安装完成后请验证 trae-ide、trae_status、trae_delegate 是否可用，并告诉我下一步。
+安装完成后请验证 traeclaw、trae_status、trae_delegate 是否可用，并告诉我下一步。
 ```
 
 ## 更短的说法
@@ -85,7 +85,7 @@ bash ./scripts/install-openclaw-integration.sh
 7. 安装完成后验证：
 
 ```powershell
-openclaw plugins info trae-ide
+openclaw plugins info traeclaw
 openclaw config validate
 ```
 

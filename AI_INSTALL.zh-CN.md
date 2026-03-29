@@ -35,7 +35,7 @@ bash ./scripts/bootstrap-openclaw-integration.sh
 5. 安装完成后必须验证：
 
 ```powershell
-openclaw plugins info trae-ide
+openclaw plugins info traeclaw
 openclaw config validate
 ```
 
@@ -67,7 +67,7 @@ bash ./scripts/install-openclaw-integration.sh
 
 不要使用 openclaw plugins install <github-url> 或 git spec。
 安装完成后请验证：
-- openclaw plugins info trae-ide
+- openclaw plugins info traeclaw
 - openclaw config validate
 
 最后请告诉我：
@@ -137,7 +137,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap-openclaw-integra
 3. 安装完成后检查：
 
 ```powershell
-openclaw plugins info trae-ide
+openclaw plugins info traeclaw
 openclaw config validate
 ```
 
@@ -176,7 +176,7 @@ bash ./scripts/install-openclaw-integration.sh
 
 不是“下载完成”，而是下面这些条件成立：
 
-- `openclaw plugins info trae-ide` 成功
+- `openclaw plugins info traeclaw` 成功
 - `openclaw config validate` 成功
 - OpenClaw 可以调用 `trae_status`
 - TraeClaw 可以通过 `start-traeapi.cmd` 启动
@@ -189,7 +189,7 @@ bash ./scripts/install-openclaw-integration.sh
    - 本地仓库安装
    - 或 GitHub bootstrap 安装
 2. 两条验证命令是否成功：
-   - `openclaw plugins info trae-ide`
+   - `openclaw plugins info traeclaw`
    - `openclaw config validate`
 3. 是否需要用户重启 OpenClaw Gateway
 4. 给用户一条可直接复制的测试语句：

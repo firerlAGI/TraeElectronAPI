@@ -18,7 +18,7 @@
    - 直接执行 `scripts/install-openclaw-integration.ps1`
    - macOS 上直接执行 `scripts/install-openclaw-integration.sh`
 5. 安装完成后必须验证：
-   - `openclaw plugins info trae-ide`
+   - `openclaw plugins info traeclaw`
    - `openclaw config validate`
 6. 验证通过后提醒用户：
    - 重启 OpenClaw Gateway
@@ -42,7 +42,7 @@
    - `openclaw config set`
    - `openclaw config validate`
 5. 安装完成后至少验证：
-   - `openclaw plugins info trae-ide`
+   - `openclaw plugins info traeclaw`
    - `openclaw config validate`
    - 用户重启 OpenClaw Gateway 后可调用 `trae_status`
 6. 如果用户已经明确给出本地仓库路径：
@@ -63,7 +63,7 @@
    - macOS 本地仓库：`bash ./scripts/install-openclaw-integration.sh`
    - macOS 远程仓库：`bash ./scripts/bootstrap-openclaw-integration.sh`
 3. 最后报告验证结果：
-   - `openclaw plugins info trae-ide`
+   - `openclaw plugins info traeclaw`
    - `openclaw config validate`
    - 是否需要用户重启 OpenClaw Gateway
 

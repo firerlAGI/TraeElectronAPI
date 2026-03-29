@@ -53,26 +53,26 @@ bash ./scripts/install-openclaw-integration.sh
 
 ```bash
 openclaw plugins install traeclaw
-openclaw plugins enable trae-ide
+openclaw plugins enable traeclaw
 ```
 
 发布新版本后，用户更新：
 
 ```bash
-openclaw plugins update trae-ide
+openclaw plugins update traeclaw
 ```
 
 要注意两点：
 
 - 这个 npm 包会同时分发 OpenClaw 插件和完整 TraeClaw runtime
-- 用户执行 `openclaw plugins update trae-ide` 时，插件和网关能力会一起更新
+- 用户执行 `openclaw plugins update traeclaw` 时，插件和网关能力会一起更新
 
 如果希望插件自动拉起包内 runtime，再补上：
 
 ```bash
-openclaw config set plugins.entries.trae-ide.enabled true --strict-json
-openclaw config set plugins.entries.trae-ide.config.autoStart true --strict-json
-openclaw config set plugins.entries.trae-ide.config.baseUrl "http://127.0.0.1:8787"
+openclaw config set plugins.entries.traeclaw.enabled true --strict-json
+openclaw config set plugins.entries.traeclaw.config.autoStart true --strict-json
+openclaw config set plugins.entries.traeclaw.config.baseUrl "http://127.0.0.1:8787"
 openclaw config validate
 ```
 

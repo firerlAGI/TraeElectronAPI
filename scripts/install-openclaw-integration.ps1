@@ -9,6 +9,9 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$pluginId = "traeclaw"
+$legacyPluginId = "trae-ide"
+$pluginEntryPath = "plugins.entries.$pluginId"
 
 function Write-Step {
   param([string]$Message)
@@ -168,24 +171,32 @@ if (-not (Test-Path $quickstartCommand)) {
 $quickstartCommandConfig = Quote-ShellPath $quickstartCommand
 
 Write-Step "Checking whether the plugin is already installed."
-$pluginInfo = Invoke-OpenClaw -Arguments @("plugins", "info", "trae-ide") -IgnoreError -Capture
+$pluginInfo = Invoke-OpenClaw -Arguments @("plugins", "info", $pluginId) -IgnoreError -Capture
+$legacyPluginInfo = Invoke-OpenClaw -Arguments @("plugins", "info", $legacyPluginId) -IgnoreError -Capture
 if (-not $pluginInfo) {
+  if ($legacyPluginInfo) {
+    Write-Step "Legacy plugin $legacyPluginId is installed. Disabling it before installing $pluginId."
+    Invoke-OpenClaw -Arguments @("plugins", "disable", $legacyPluginId) -IgnoreError
+  }
   Write-Step "Installing the OpenClaw plugin from the local repository."
   Invoke-OpenClaw -Arguments @("plugins", "install", "--link", $pluginDir)
 } else {
-  Write-Step "Plugin trae-ide is already installed. Reusing the existing install."
+  Write-Step "Plugin $pluginId is already installed. Reusing the existing install."
 }
 
 Write-Step "Enabling the plugin."
-Invoke-OpenClaw -Arguments @("plugins", "enable", "trae-ide") -IgnoreError
-Set-ConfigValue -Path "plugins.entries.trae-ide.enabled" -Value "true" -StrictJson
-Set-ConfigValue -Path "plugins.entries.trae-ide.config.baseUrl" -Value $BaseUrl
+Invoke-OpenClaw -Arguments @("plugins", "enable", $pluginId) -IgnoreError
+if ($legacyPluginInfo) {
+  Invoke-OpenClaw -Arguments @("plugins", "disable", $legacyPluginId) -IgnoreError
+}
+Set-ConfigValue -Path "$pluginEntryPath.enabled" -Value "true" -StrictJson
+Set-ConfigValue -Path "$pluginEntryPath.config.baseUrl" -Value $BaseUrl
 $autoStartValue = if ($AutoStart.IsPresent) { "true" } else { "false" }
-Set-ConfigValue -Path "plugins.entries.trae-ide.config.autoStart" -Value $autoStartValue -StrictJson
-Set-ConfigValue -Path "plugins.entries.trae-ide.config.quickstartCommand" -Value $quickstartCommandConfig
-Set-ConfigValue -Path "plugins.entries.trae-ide.config.quickstartCwd" -Value $resolvedRepoRoot
+Set-ConfigValue -Path "$pluginEntryPath.config.autoStart" -Value $autoStartValue -StrictJson
+Set-ConfigValue -Path "$pluginEntryPath.config.quickstartCommand" -Value $quickstartCommandConfig
+Set-ConfigValue -Path "$pluginEntryPath.config.quickstartCwd" -Value $resolvedRepoRoot
 
-$toolIds = @("trae-ide", "trae_status", "trae_update_self", "trae_new_chat", "trae_open_project", "trae_switch_mode", "trae_delegate")
+$toolIds = @($pluginId, $legacyPluginId, "trae_status", "trae_update_self", "trae_new_chat", "trae_open_project", "trae_switch_mode", "trae_delegate")
 $rootPolicyMode = Update-ToolPolicy -AllowPath "tools.allow" -AlsoAllowPath "tools.alsoAllow" -ToolIds $toolIds
 Write-Step "Updated root tool policy via tools.$rootPolicyMode."
 
@@ -219,10 +230,10 @@ if (-not $SkipValidate) {
 Write-Host ""
 Write-Host "TraeClaw + OpenClaw integration install completed."
 Write-Host "- Repo root: $resolvedRepoRoot"
-Write-Host "- Plugin id: trae-ide"
+Write-Host "- Plugin id: $pluginId"
 Write-Host "- Base URL: $BaseUrl"
 Write-Host "- Quickstart: $quickstartCommandConfig"
 Write-Host "- Next step: restart OpenClaw Gateway"
-Write-Host "- Verify: openclaw plugins info trae-ide"
+Write-Host "- Verify: openclaw plugins info $pluginId"
 Write-Host "- Verify after restart: ask OpenClaw to use trae_status"
 Write-Host ""

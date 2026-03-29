@@ -35,7 +35,7 @@ If you just want the shortest working path, the recommended flow today is:
 You can paste the following sentence directly into OpenClaw:
 
 ```text
-Please read AGENTS.md and AI_INSTALL.zh-CN.md from https://github.com/firerlAGI/TraeClaw first, then install and enable traeclaw (trae-ide) from npm on macOS, verify openclaw plugins info trae-ide and openclaw config validate, remind me to restart OpenClaw Gateway, run trae_status once, and then tell me how to use trae_delegate next.
+Please read AGENTS.md and AI_INSTALL.zh-CN.md from https://github.com/firerlAGI/TraeClaw first, then install and enable traeclaw from npm on macOS, verify openclaw plugins info traeclaw and openclaw config validate, remind me to restart OpenClaw Gateway, run trae_status once, and then tell me how to use trae_delegate next.
 ```
 
 For a longer Chinese conversation template, see [docs/openclaw-chat-prompts.zh-CN.md](docs/openclaw-chat-prompts.zh-CN.md).
@@ -53,7 +53,7 @@ If the executor is OpenClaw, Codex, or another AI assistant, start with:
 
 Success is not "a script finished". Success means all of the following are true:
 
-- `openclaw plugins info trae-ide` succeeds
+- `openclaw plugins info traeclaw` succeeds
 - `openclaw config validate` succeeds
 - OpenClaw can call `trae_status`
 - OpenClaw can call `trae_delegate`
@@ -64,10 +64,10 @@ If you want a stable, update-friendly installation path for OpenClaw users, pref
 
 ```bash
 openclaw plugins install traeclaw
-openclaw plugins enable trae-ide
-openclaw config set plugins.entries.trae-ide.enabled true --strict-json
-openclaw config set plugins.entries.trae-ide.config.autoStart true --strict-json
-openclaw config set plugins.entries.trae-ide.config.baseUrl "http://127.0.0.1:8787"
+openclaw plugins enable traeclaw
+openclaw config set plugins.entries.traeclaw.enabled true --strict-json
+openclaw config set plugins.entries.traeclaw.config.autoStart true --strict-json
+openclaw config set plugins.entries.traeclaw.config.baseUrl "http://127.0.0.1:8787"
 openclaw config validate
 ```
 
@@ -80,7 +80,7 @@ After installation, ask the user to:
 Update later with:
 
 ```bash
-openclaw plugins update trae-ide
+openclaw plugins update traeclaw
 ```
 
 Notes:

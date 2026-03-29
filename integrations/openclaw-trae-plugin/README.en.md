@@ -16,19 +16,19 @@ If you want users to receive future plugin updates through OpenClaw, install the
 
 ```bash
 openclaw plugins install traeclaw
-openclaw plugins enable trae-ide
+openclaw plugins enable traeclaw
 ```
 
 After a new version is published, users can update with:
 
 ```bash
-openclaw plugins update trae-ide
+openclaw plugins update traeclaw
 ```
 
 Important:
 
 - the npm package now bundles the full TraeClaw runtime
-- when users run `openclaw plugins update trae-ide`, the plugin and gateway capabilities update together
+- when users run `openclaw plugins update traeclaw`, the plugin and gateway capabilities update together
 - with `autoStart` enabled, the plugin can launch the bundled quickstart entry point without a separate local checkout
 
 ## Exposed Tools

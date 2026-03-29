@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require("node:fs");
 const path = require("node:path");
+const PLUGIN_ID = "traeclaw";
 
 function buildHotReloadLayout(options = {}) {
   const rootDir = path.resolve(options.rootDir || path.join(__dirname, ".."));
@@ -9,10 +10,10 @@ function buildHotReloadLayout(options = {}) {
     rootDir,
     sourcePluginDir: path.join(rootDir, "integrations", "openclaw-trae-plugin"),
     hotRootDir,
-    hotPluginDir: path.join(hotRootDir, "trae-ide"),
+    hotPluginDir: path.join(hotRootDir, PLUGIN_ID),
     generatedConfigPath: path.join(hotRootDir, "openclaw.dev.config.json"),
     readmePath: path.join(hotRootDir, "README.dev-hot.txt"),
-    markerPath: path.join(hotRootDir, "trae-ide", "HOT_PLUGIN_README.txt")
+    markerPath: path.join(hotRootDir, PLUGIN_ID, "HOT_PLUGIN_README.txt")
   };
 }
 
@@ -31,7 +32,7 @@ function buildOpenClawDevConfig(layout, options = {}) {
         paths: [layout.hotPluginDir]
       },
       entries: {
-        "trae-ide": {
+        [PLUGIN_ID]: {
           enabled: true,
           config: {
             baseUrl: "http://127.0.0.1:8787",
@@ -43,7 +44,7 @@ function buildOpenClawDevConfig(layout, options = {}) {
       }
     },
     tools: {
-      alsoAllow: ["trae-ide"]
+      alsoAllow: [PLUGIN_ID]
     },
     agents: {
       list: [

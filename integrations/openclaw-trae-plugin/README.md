@@ -16,19 +16,19 @@
 
 ```bash
 openclaw plugins install traeclaw
-openclaw plugins enable trae-ide
+openclaw plugins enable traeclaw
 ```
 
 后续发布新版本后，用户更新：
 
 ```bash
-openclaw plugins update trae-ide
+openclaw plugins update traeclaw
 ```
 
 注意：
 
 - npm 包内已经包含完整 TraeClaw runtime
-- 用户执行 `openclaw plugins update trae-ide` 时，插件和网关能力会一起更新
+- 用户执行 `openclaw plugins update traeclaw` 时，插件和网关能力会一起更新
 - 如果启用 `autoStart`，插件会优先拉起包内自带的 quickstart 入口，不需要额外本地仓库
 
 ## 暴露的工具

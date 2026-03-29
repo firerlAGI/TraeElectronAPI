@@ -35,7 +35,7 @@ test("resolvePluginRuntimeConfig reads plugin config from api.config", () => {
     config: {
       plugins: {
         entries: {
-          "trae-ide": {
+          "traeclaw": {
             config: {
               baseUrl: "http://127.0.0.1:9999/",
               token: "abc",
@@ -63,6 +63,35 @@ test("resolvePluginRuntimeConfig reads plugin config from api.config", () => {
   assert.equal(config.autoUpdateIntervalMs, DEFAULT_AUTO_UPDATE_INTERVAL_MS);
   assert.equal(config.packageName, "traeclaw");
   assert.match(config.pluginVersion, /^\d+\.\d+\.\d+/);
+});
+
+test("resolvePluginRuntimeConfig merges legacy trae-ide entry config during migration", () => {
+  const config = resolvePluginRuntimeConfig({
+    config: {
+      plugins: {
+        entries: {
+          "trae-ide": {
+            config: {
+              baseUrl: "http://127.0.0.1:9898/",
+              token: "legacy-token",
+              quickstartCommand: "\"/tmp/legacy/start-traeapi.command\""
+            }
+          },
+          traeclaw: {
+            config: {
+              baseUrl: "http://127.0.0.1:9999/",
+              autoStart: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  assert.equal(config.baseUrl, "http://127.0.0.1:9999");
+  assert.equal(config.autoStart, true);
+  assert.equal(config.token, "legacy-token");
+  assert.equal(config.quickstartCommand, "\"/tmp/legacy/start-traeapi.command\"");
 });
 
 test("stripDuplicateFinalText removes final reply from process chunks", () => {
@@ -181,7 +210,7 @@ test("formatters produce readable summaries", () => {
   assert.equal(switchModeText.includes("Quickstart triggered: yes"), true);
 
   const updateText = formatUpdateToolResult({
-    pluginId: "trae-ide",
+    pluginId: "traeclaw",
     packageName: "traeclaw",
     previousVersion: "0.2.1",
     installedVersion: "0.2.2",
@@ -190,7 +219,7 @@ test("formatters produce readable summaries", () => {
     alreadyLatest: false,
     restartRequired: true,
     warningMessage: "",
-    commandOutputSummary: "updated trae-ide"
+    commandOutputSummary: "updated traeclaw"
   });
   assert.equal(updateText.includes("TraeClaw plugin updated."), true);
   assert.equal(updateText.includes("Installed version: 0.2.2"), true);
@@ -702,7 +731,7 @@ test("updateSelf returns early when the installed plugin is already at the lates
   }
 });
 
-test("updateSelf runs openclaw plugins update trae-ide and reports the new installed version", async () => {
+test("updateSelf runs openclaw plugins update traeclaw and reports the new installed version", async () => {
   const packageRoot = createTempPluginPackage("0.2.1");
   const client = new TraeApiClient({
     baseUrl: "http://127.0.0.1:8787",
@@ -721,14 +750,14 @@ test("updateSelf runs openclaw plugins update trae-ide and reports the new insta
     requestTimeoutMs: 500,
     spawnImpl: createMockSpawn(async ({ command, args, options, child }) => {
       assert.equal(command, "/usr/local/bin/openclaw");
-      assert.deepEqual(args, ["plugins", "update", "trae-ide"]);
+      assert.deepEqual(args, ["plugins", "update", "traeclaw"]);
       assert.equal(Boolean(options.shell), false);
       fs.writeFileSync(
         path.join(packageRoot, "package.json"),
         `${JSON.stringify({ name: "traeclaw", version: "0.2.2" }, null, 2)}\n`,
         "utf8"
       );
-      child.stdout.end("updated trae-ide\n");
+      child.stdout.end("updated traeclaw\n");
       child.emit("close", 0, null);
     })
   });
@@ -745,7 +774,7 @@ test("updateSelf runs openclaw plugins update trae-ide and reports the new insta
     assert.equal(result.previousVersion, "0.2.1");
     assert.equal(result.installedVersion, "0.2.2");
     assert.equal(result.restartRequired, true);
-    assert.equal(result.commandOutputSummary.includes("updated trae-ide"), true);
+    assert.equal(result.commandOutputSummary.includes("updated traeclaw"), true);
   } finally {
     fs.rmSync(packageRoot, {
       recursive: true,
@@ -778,7 +807,7 @@ test("runAutoUpdateCycle updates the runtime state and marks restart required af
               "utf8"
             );
             return {
-              pluginId: "trae-ide",
+              pluginId: "traeclaw",
               packageName: "traeclaw",
               previousVersion: "0.2.1",
               installedVersion: "0.2.2",
@@ -787,7 +816,7 @@ test("runAutoUpdateCycle updates the runtime state and marks restart required af
               alreadyLatest: true,
               restartRequired: true,
               warningMessage: "",
-              commandOutputSummary: "updated trae-ide"
+              commandOutputSummary: "updated traeclaw"
             };
           }
         };
@@ -857,7 +886,7 @@ test("schedulePluginAutoUpdate schedules a single background cycle when auto-app
               latestVersion: "0.2.1",
               previousVersion: "0.2.1",
               packageName: "traeclaw",
-              pluginId: "trae-ide",
+              pluginId: "traeclaw",
               restartRequired: false,
               warningMessage: "",
               commandOutputSummary: ""

@@ -1,5 +1,5 @@
 {
-  "id": "trae-ide",
+  "id": "traeclaw",
   "name": "TraeClaw",
   "version": "0.3.0",
   "description": "Delegate IDE tasks from OpenClaw to a local TraeClaw instance that drives the Trae desktop app.",
