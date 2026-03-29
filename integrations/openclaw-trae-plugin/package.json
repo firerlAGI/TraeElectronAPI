@@ -1,6 +1,6 @@
 {
   "name": "traeclaw",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "OpenClaw plugin that delegates IDE tasks to a local TraeClaw instance.",
   "main": "index.js",
   "homepage": "https://github.com/firerlAGI/TraeClaw/tree/main/integrations/openclaw-trae-plugin",

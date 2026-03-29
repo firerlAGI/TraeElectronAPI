@@ -4,11 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.3.1 - 2026-03-29
+
 ### Added
 
 - End-user install guides in English and Chinese.
 - End-user FAQ in English and Chinese.
 - Extra README entry points for install, FAQ, and OpenClaw integration docs.
+
+### Changed
+
+- Renamed the OpenClaw plugin id from `trae-ide` to `traeclaw` across manifests, install scripts, examples, and docs.
+- Kept plugin config migration compatibility so legacy `trae-ide` entries can still supply fallback settings during upgrades.
+
+### Notes
+
+- Existing users should verify the new plugin id with `openclaw plugins info traeclaw` after upgrading.
 
 ## 0.3.0 - 2026-03-19
 
